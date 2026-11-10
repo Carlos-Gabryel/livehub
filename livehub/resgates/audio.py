@@ -45,6 +45,15 @@ def tocar(caminho, volume: float = 1.0, device_name: str = ""):
     if sd is None or sf is None:
         raise RuntimeError("sounddevice/soundfile indisponiveis")
     dados, taxa = sf.read(str(caminho), dtype="float32", always_2d=True)
+    tocar_dados(dados, taxa, volume, device_name)
+
+
+def tocar_dados(dados, taxa, volume: float = 1.0, device_name: str = ""):
+    """Toca um array float32 (n, canais) ate o fim (bloqueante)."""
+    if sd is None:
+        raise RuntimeError("sounddevice indisponivel")
+    if dados.ndim == 1:
+        dados = dados.reshape(-1, 1)
     if dados.shape[1] == 1:
         dados = dados.repeat(2, axis=1)
     kw = {}
