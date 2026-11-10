@@ -5,31 +5,43 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Chat neutro</title>
 <!-- Overlay da live: todas as plataformas no mesmo padrão, sem ícone/badge/cor de origem, fundo transparente.
-     Parâmetros: ?sumir=0 (segundos até a mensagem sumir, 0 = nunca) &max=15 &fonte=22 &ignorar=nome1,nome2
+     Visual (cores, fonte, etc.): Configurações > Aparência do chat; muda ao vivo, sem atualizar a fonte.
+     Parâmetros (se presentes, valem mais que a configuração): ?sumir=0 (segundos até a mensagem sumir, 0 = nunca) &max=15 &fonte=22 &ignorar=nome1,nome2
      Bots (lista, badge de bot, nome terminado em "bot") e comandos (!algo) não aparecem. -->
 <style>
   @font-face { font-family:"Fira Code"; font-weight:600; src:url(/fonts/FiraCode-SemiBold.ttf); }
   @font-face { font-family:"Fira Code"; font-weight:700; src:url(/fonts/FiraCode-Bold.ttf); }
   html,body { margin:0; height:100%; background:rgba(0,0,0,0) !important; overflow:hidden; }
+  :root { --tw:#9146ff; --yt:#ff3b3b; --kk:#53fc18; --tt:#25f4ee; }
+  .tw { --c:var(--tw); } .yt { --c:var(--yt); } .kk { --c:var(--kk); } .tt { --c:var(--tt); }
   #caixa { position:absolute; inset:0; border-radius:14px; overflow:hidden;
-    background:linear-gradient(to bottom,#dcebff,#ebe1ff); box-shadow:inset 0 0 0 1px #c9c4f0; }
-  body { color:#1e1b3a; font:700 var(--fs,22px)/1.35 "Fira Code",monospace; }
+    background:linear-gradient(to bottom,var(--fundo,#dcebff),var(--fundo-fim,#ebe1ff)); box-shadow:inset 0 0 0 1px var(--borda-caixa,#c9c4f0); }
+  body { color:var(--texto,#1e1b3a); font:var(--peso,700) var(--tam,22px)/1.35 var(--fonte,"Fira Code",monospace);
+    text-shadow:var(--sombra,none); }
   #log { position:absolute; left:0; right:0; bottom:0; padding:8px 10px; }
-  .m { margin:4px 0; word-break:break-word; transition:opacity .6s; }
+  .m { margin:var(--esp,4px) 0; padding:var(--msg-pad,0); background:var(--msg-bg,transparent); border-radius:var(--raio,0);
+    word-break:break-word; transition:opacity .6s; }
   .m.out { opacity:0; }
-  .u { margin-right:6px; }
-  .u::after { content:":"; color:#1e1b3a; }
-  .t { font-weight:600; }
+  .u { margin-right:6px; color:var(--up); }
+  .u::after { content:":"; color:var(--texto,#1e1b3a); }
+  .t { font-weight:var(--peso-t,600); }
   .emote { height:1.6em; vertical-align:middle; margin:-3px 1px; }
+  .emote-txt { display:none; }
 </style>
+<link rel="stylesheet" id="aparencia" href="/aparencia/neutro.css">
 </head>
 <body>
 <div id="caixa"><div id="log"></div></div>
 <script>
 const q = new URLSearchParams(location.search);
-const SUMIR = +(q.get('sumir') ?? 0), MAX = +(q.get('max') ?? 15);
-if (q.get('fonte')) document.body.style.setProperty('--fs', +q.get('fonte') + 'px');
+const ALVO = 'neutro', DEMO = q.get('demo') === '1';
+let OPT = {sumir: 0, max: 15};
+// parametros da URL (compatibilidade) valem mais que a configuracao salva
+const sumir = () => q.has('sumir') ? +q.get('sumir') : OPT.sumir;
+const maximo = () => q.has('max') ? +q.get('max') : OPT.max;
+if (q.get('fonte')) document.documentElement.style.setProperty('--tam', +q.get('fonte') + 'px');
 const log = document.getElementById('log');
+const CLS = {twitch:'tw', youtube:'yt', kick:'kk', tiktok:'tt'};
 const CORES = ['#c0262d','#b4540a','#8a6d00','#1d7a32','#0f7a73','#1f55c2','#6a35c9','#b3247f'];
 
 const BOTS = new Set(['streamelements','nightbot','moobot','streamlabs','fossabot','wizebot','sery_bot','botrix',
@@ -44,33 +56,64 @@ function ehBot(m) {
   return texto.startsWith('!');
 }
 function cor(nome) { let h = 0; for (const c of nome.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) >>> 0; return CORES[h % CORES.length]; }
-function safeUrl(u) { return typeof u === 'string' && /^https:\/\//.test(u) ? u : null; }
+function safeUrl(u) { return typeof u === 'string' && (/^https:\/\//.test(u) || (DEMO && /^data:image\/svg\+xml/.test(u))) ? u : null; }
 
-function add(m) {
+function add(m, hist) {
   if (m.event) return;  // subs/raids/etc. revelariam a plataforma
   if (ehBot(m)) return;
-  const row = document.createElement('div'); row.className = 'm';
+  const row = document.createElement('div'); row.className = 'm ' + (CLS[m.platform] || '');
   row.dataset.key = m.platform + ':' + (m.id || ''); row.dataset.ukey = m.platform + ':' + (m.user_id || '');
-  const u = document.createElement('span'); u.className = 'u'; u.textContent = m.user; u.style.color = cor(m.user || '');
+  const u = document.createElement('span'); u.className = 'u'; u.textContent = m.user; u.style.setProperty('--up', cor(m.user || '')); u.style.setProperty('--uc', m.color || cor(m.user || ''));
   const t = document.createElement('span'); t.className = 't';
   for (const p of m.parts || []) {
     if (p.t === 'emote' && safeUrl(p.url)) {
       const i = document.createElement('img'); i.className = 'emote'; i.src = p.url; i.alt = p.name; t.appendChild(i);
+      const x = document.createElement('span'); x.className = 'emote-txt'; x.textContent = p.name || ''; t.appendChild(x);
     } else t.appendChild(document.createTextNode(p.v ?? p.name ?? ''));
   }
   row.append(u, t); log.appendChild(row);
-  while (log.children.length > MAX) log.removeChild(log.firstChild);
-  if (SUMIR > 0) {
-    const resto = SUMIR * 1000 - (Date.now() - (m.ts || Date.now() / 1000) * 1000);
+  if (!hist) { row.classList.add('novo'); setTimeout(() => row.classList.remove('novo'), 500); }
+  while (log.children.length > maximo()) log.removeChild(log.firstChild);
+  if (sumir() > 0) {
+    const resto = sumir() * 1000 - (Date.now() - (m.ts || Date.now() / 1000) * 1000);
     setTimeout(() => { row.classList.add('out'); setTimeout(() => row.remove(), 700); }, Math.max(resto, 0));
   }
+}
+
+function aplicar(v, preview) {
+  OPT = {...OPT, ...v};
+  const l = document.getElementById('aparencia');
+  const href = '/aparencia/' + ALVO + '.css' + (preview ? '?v=' + encodeURIComponent(JSON.stringify(v)) + '&' : '?') + 't=' + Date.now();
+  const n = l.cloneNode(); n.href = href;
+  n.onload = () => l.remove(); n.onerror = () => n.remove();
+  l.id = ''; l.after(n);
+}
+window.addEventListener('message', e => {
+  if (e.origin !== location.origin || !e.data || e.data.tipo !== 'preview' || typeof e.data.valores !== 'object') return;
+  aplicar(e.data.valores, true);
+});
+
+const DEMO_MSGS = [
+  {platform:'twitch', user:'Ana', color:'#ff7f50', badges:[{title:'Moderador', url:'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="3" fill="%2300ad03"/></svg>'}], parts:[{t:'text', v:'Boa noite, pessoal! '}, {t:'emote', name:'Kappa', url:'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="%23ffd33d"/></svg>'}]},
+  {platform:'kick', user:'Bruno', color:'#53fc18', parts:[{t:'text', v:'Essa jogada foi absurda, quero ver de novo!'}]},
+  {platform:'youtube', user:'Carla', owner:true, parts:[{t:'text', v:'Mensagem bem longa para mostrar como o texto quebra de linha quando o chat fica estreito e tem muita coisa para ler de uma vez só.'}]},
+  {platform:'tiktok', user:'Diego', color:'#b36bff', parts:[{t:'text', v:'Oi do TikTok!'}]},
+];
+let demoN = 0;
+function demo() {
+  add({...DEMO_MSGS[demoN++ % DEMO_MSGS.length], id:'d' + demoN, user_id:'u' + demoN, ts:Date.now() / 1000});
+}
+
+async function carregarAparencia() {
+  try { const r = await fetch('/api/aparencia', {cache:'no-store'}); OPT = {...OPT, ...(await r.json())[ALVO]}; } catch (e) {}
 }
 
 function connect() {
   const ws = new WebSocket('ws://' + location.host + '/dock/ws');
   ws.onmessage = ev => {
     const d = JSON.parse(ev.data);
-    if (d.type === 'history') { log.textContent = ''; d.messages.forEach(add); }
+    if (d.tipo === 'aparencia') { if (d.alvo === ALVO) aplicar(d.valores); }
+    else if (d.type === 'history') { log.textContent = ''; d.messages.forEach(x => add(x, true)); }
     else if (d.type === 'msg') add(d.msg);
     else if (d.type === 'delete') log.querySelectorAll('.m').forEach(r => {
       if ((d.id && r.dataset.key === d.platform + ':' + d.id) || (d.user_id && r.dataset.ukey === d.platform + ':' + d.user_id)) r.remove(); });
@@ -78,7 +121,7 @@ function connect() {
   };
   ws.onclose = () => setTimeout(connect, 2000);
 }
-connect();
+carregarAparencia().then(() => { if (DEMO) { demo(); setInterval(demo, 1500); } else connect(); });
 </script>
 </body>
 </html>
