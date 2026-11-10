@@ -1,0 +1,118 @@
+LIVEHUB - LEIA-ME
+=================
+
+O QUE E
+-------
+O LiveHub junta tudo o que a sua live precisa em um programa so:
+
+  * Chat geral: mensagens da Twitch, Kick, YouTube e TikTok na mesma tela.
+  * Feed geral: follows, inscricoes, doacoes e outras interacoes.
+  * Recompensas: resgates de pontos do canal, com som opcional.
+  * Aparencia customizavel: fonte, cores, tamanho, animacoes e mais.
+
+Tudo aparece no OBS por meio de paginas do navegador. O LiveHub roda
+escondido na bandeja do Windows (perto do relogio).
+
+
+REQUISITOS
+----------
+  * Windows 10 ou 11, 64 bits.
+  * Conexao com a internet.
+
+
+INSTALACAO
+----------
+1. Extraia o arquivo .zip numa pasta fixa, por exemplo:
+       Documentos\LiveHub
+   NAO rode o programa de dentro do zip: extraia tudo primeiro.
+2. Abra a pasta e de dois cliques em LiveHub.exe.
+3. Aviso do Windows: o app nao e assinado digitalmente, entao o
+   SmartScreen pode mostrar "O Windows protegeu o computador".
+   Clique em "Mais informacoes" e depois em "Executar assim mesmo".
+4. O antivirus pode reclamar do programa. Isso e um falso positivo
+   comum em programas criados com PyInstaller. Se precisar, adicione a
+   pasta do LiveHub as excecoes do antivirus.
+
+
+PRIMEIRO USO
+------------
+Na primeira vez, o LiveHub abre sozinho a pagina de configuracoes no
+navegador. Preencha os seus canais (Twitch, Kick, YouTube, TikTok) e
+salve.
+
+O icone do LiveHub fica na bandeja, perto do relogio (talvez dentro da
+setinha "^"). Clique com o botao direito para ver as opcoes:
+  * Abrir configuracoes, chat, feed e recompensas
+  * Pasta de sons e Ver log
+  * Iniciar com o Windows
+  * Sair (fecha o LiveHub)
+
+Se abrir o LiveHub.exe de novo com ele ja rodando, ele apenas abre a
+pagina de configuracoes.
+
+
+USANDO NO OBS
+-------------
+Os enderecos abaixo usam a porta padrao 8782. A pagina de configuracoes
+mostra os links certos para o seu caso, com botao "copiar".
+
+Docks (paineis dentro do OBS):
+  Menu Docks > Docks de navegador personalizados. Adicione:
+    Chat:         http://127.0.0.1:8782/dock
+    Feed:         http://127.0.0.1:8782/eventos
+    Recompensas:  http://127.0.0.1:8782/recompensas
+
+Chat na tela da live (aparece para o publico):
+  Em uma cena, adicione uma fonte "Navegador" (Fonte de navegador) com o
+  endereco:
+    http://127.0.0.1:8782/neutro
+
+
+RECOMPENSAS COM SOM (OPCIONAL)
+------------------------------
+Resumo dos passos (a pagina /recompensas tem o guia completo):
+  1. Conecte a sua conta da Twitch na pagina de configuracoes.
+  2. Coloque os arquivos de som na pasta de sons (menu da bandeja >
+     "Pasta de sons").
+  3. Associe cada recompensa a um som.
+  4. Escolha a saida de som (qual caixa ou fone vai tocar).
+
+
+APARENCIA DO CHAT
+-----------------
+Na pagina de configuracoes ha uma area de aparencia para o chat do dock
+e para o chat da live: fonte, tamanho, cores, contorno, icones, emotes,
+animacoes e quanto tempo a mensagem fica na tela. As mudancas valem na
+hora, sem precisar reiniciar.
+
+
+DICAS E PROBLEMAS
+-----------------
+* Porta em uso: se outro programa ja usa a porta do LiveHub, ele avisa.
+  Feche o outro programa ou troque "web_port" no arquivo
+  %APPDATA%\LiveHub\config.json (e use a nova porta nos links do OBS).
+  Na primeira execucao o LiveHub escolhe outra porta sozinho.
+* Streamer.bot: se voce usa o Streamer.bot de verdade (porta 8080), nao
+  ligue a opcao de compatibilidade. Ela so serve para quem usa o overlay
+  da nutty.gg sem ter o Streamer.bot.
+* Kick nao conecta: informe os ids manualmente nas configuracoes
+  (chatroom_id e channel_id).
+* YouTube e TikTok so conectam quando a live esta no ar. Antes disso o
+  status aparece como aguardando.
+* Log (para pedir ajuda): %APPDATA%\LiveHub\livehub.log
+  Tambem pelo menu da bandeja > "Ver log".
+
+
+ATUALIZAR
+---------
+Feche o LiveHub (bandeja > Sair), baixe a versao nova e substitua a
+pasta antiga pela nova. Suas configuracoes ficam em %APPDATA%\LiveHub e
+nao sao perdidas.
+
+
+DESINSTALAR
+-----------
+1. Na bandeja, desmarque "Iniciar com o Windows" e clique em "Sair".
+2. Apague a pasta onde extraiu o LiveHub.
+3. Apague tambem a pasta %APPDATA%\LiveHub (configuracoes, sons e log).
+   Dica: cole %APPDATA% na barra do Explorador de Arquivos.
