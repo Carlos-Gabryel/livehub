@@ -62,7 +62,8 @@ async def test_get_nunca_vaza_segredos(rt):
             j = await r.json()
     for v in (SEGREDO, TOKEN, JWT, "refresh-qqq"):
         assert v not in txt
-    assert j["twitch"] == {"client_id": "cid1", "has_secret": True, "login": "ana", "user_id": "42", "connected": True}
+    assert j["twitch"] == {"client_id": "cid1", "has_secret": True, "login": "ana", "user_id": "42", "connected": True,
+                    "assinaturas": {"follow": "inativo", "resgates": "inativo"}}
     assert j["streamelements"]["has_jwt"] is True
     assert j["audio"]["saidas"] == ["Alto-falante", "Fone"]
     assert j["urls"]["dock"].endswith(f":{rt.cfg['web_port']}/dock")
@@ -186,9 +187,11 @@ async def test_recompensas_tem_seletor_de_saida(rt):
             t = await r.text()
         async with s.get(b(rt) + "/config") as r:
             c = await r.text()
-    assert 'id="saida"' in t and "/api/audio/testar" in t and "/config#recompensas" in t
+    assert 'id="saida"' in t and "/api/audio/testar" in t and "/config#twitch" in t
     assert "Saída de som das recompensas" in t and "Saída de som das recompensas" in c
-    assert "Só é necessário se você quiser usar as recompensas" in c and "badges da Twitch" in c
+    assert "Opção 1" in c and "Opção 2" in c and "Sem login você perde:" in c and "adges da Twitch no chat" in c
+    assert "Só é necessário se você quiser usar as recompensas" not in c
+    assert "Seu canal ainda não é Afiliado/Parceiro" in t
 
 
 async def test_saida_alterada_vale_no_proximo_play(rt, monkeypatch):
@@ -203,3 +206,14 @@ async def test_saida_alterada_vale_no_proximo_play(rt, monkeypatch):
             break
         await asyncio.sleep(0.05)
     assert chamadas == ["Fone"]
+
+
+@pytest.mark.parametrize("entrada", ["MeuCanal", "@MeuCanal", "https://www.twitch.tv/MeuCanal", "twitch.tv/meucanal/", "https://twitch.tv/MeuCanal?x=1"])
+async def test_twitch_canal_normaliza(rt, entrada):
+    st, j = await post(rt, {"twitch": {"channel": entrada}})
+    assert st == 200 and j["config"]["twitch"]["channel"] == "meucanal"
+
+
+async def test_twitch_canal_invalido(rt):
+    st, j = await post(rt, {"twitch": {"channel": "a b"}})
+    assert st == 400 and j["campo"] == "twitch.channel"

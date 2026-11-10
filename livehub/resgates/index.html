@@ -25,7 +25,7 @@ table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:5px 8px;
   <span id="pl" class="msg"></span>
   <button class="d" onclick="parar()">Parar som e limpar fila</button>
 </div>
-<div id="semapp" class="msg" style="display:none;color:#f0b45a;margin-top:8px">Este painel é opcional: ele só é necessário para usar as recompensas do canal com som. Para ativar, configure o aplicativo da Twitch em <a href="/config#recompensas" style="color:#b9a6ff">Configurações &rarr; Recompensas com som</a>. O chat e o feed funcionam normalmente sem isso. Requer canal Afiliado ou Parceiro da Twitch.</div>
+<div id="semapp" class="msg" style="display:none;color:#f0b45a;margin-top:8px">Conecte a Twitch para ter follows da Twitch no feed, badges no chat e, se o canal for Afiliado ou Parceiro, recompensas com som. Veja em <a href="/config#twitch" style="color:#b9a6ff">Configurações &rarr; Twitch</a>. O chat e o feed (subs, bits, raids) funcionam normalmente sem login.</div>
 <div class="bar" style="margin-top:8px"><label for="saida">Saída de som das recompensas</label>
   <select id="saida" onchange="salvarSaida()" style="width:auto;max-width:320px"></select>
   <button onclick="testarSaida()">Testar</button><span id="saida_msg" class="msg"></span></div>
@@ -56,6 +56,7 @@ async function status(){
 async function recompensas(){
   sons=await (await fetch('/api/sons')).json();
   const r=await fetch('/api/recompensas');const j=await r.json();
+  if(r.status===403&&j.nao_afiliado){$('rws').textContent='Seu canal ainda não é Afiliado/Parceiro, então não há recompensas do canal. Os follows da Twitch continuam aparecendo no feed.';carregou=true;return}
   if(!r.ok){$('rws').textContent='Erro: '+j.erro;carregou=false;return}
   const opts=m=>'<option value="">(sem som)</option>'+sons.map(s=>`<option ${m&&m.som===s?'selected':''}>${esc(s)}</option>`).join('');
   $('rws').innerHTML=j.map(x=>`<div class="rw" data-id="${x.id}" data-t="${esc(x.titulo)}">

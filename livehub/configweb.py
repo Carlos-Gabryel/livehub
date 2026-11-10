@@ -184,11 +184,16 @@ def estado(rt) -> dict:
         log.warning("listar saidas falhou: %r", e)
         saidas = []
     porta = rt.cfg["web_port"]
+    try:
+        assin = dict(rt.svc.eventsub.assinaturas)
+    except AttributeError:
+        assin = {"follow": "inativo", "resgates": "inativo"}
     return {
         "config": cfg,
         "status": dict(rt.hub.status),
         "twitch": {"client_id": tw["client_id"], "has_secret": bool(tw["client_secret"]),
-                   "login": tw["login"], "user_id": tw["user_id"], "connected": bool(tw["refresh_token"])},
+                   "login": tw["login"], "user_id": tw["user_id"], "connected": bool(tw["refresh_token"]),
+                   "assinaturas": assin},
         "streamelements": {"has_jwt": bool(sec["streamelements"]["jwt"])},
         "audio": {"saidas": saidas, "atual": cfg["audio"]["output_device"]},
         "sons_dir": str(paths.sons_dir()),

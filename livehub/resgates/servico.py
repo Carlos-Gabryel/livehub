@@ -97,6 +97,8 @@ def add_routes(app: web.Application, svc: Servico):
             await svc.auth.validar(forcar=True)
         st, j = await svc.auth.api("GET", "/channel_points/custom_rewards",
                                    params={"broadcaster_id": svc.auth.user_id})
+        if st == 403:  # canal sem Afiliado/Parceiro
+            return web.json_response({"erro": "não é afiliado", "nao_afiliado": True}, status=403)
         if st != 200:
             return web.json_response({"erro": j.get("message", str(j))}, status=502)
         mapa = settings.load_mapeamento()

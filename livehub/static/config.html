@@ -35,6 +35,10 @@ a{color:#b9a6ff}
 #apmold{border:1px solid var(--line);border-radius:6px;height:460px;overflow:hidden;background:#0e0e10}
 #apmold.xadrez{background:repeating-conic-gradient(#8a8a8a 0 25%,#c8c8c8 0 50%) 0 0/20px 20px}
 #apmold iframe{width:100%;height:100%;border:0;display:block;color-scheme:light;background:transparent}
+.card{border:1px solid #3a3a48;border-radius:8px;padding:10px 14px;margin:10px 0}
+.card h3{margin:0 0 6px}ul.ok{list-style:none;padding-left:4px;margin:4px 0;color:#8fd19e}
+.aviso{border:1px solid #f0b45a;background:rgba(240,180,90,.08);border-radius:6px;padding:8px 12px;margin-top:10px;color:#f0b45a}
+.aviso ul{list-style:none;padding-left:4px;margin:4px 0}
 .presets{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
 </style></head><body>
 <h1>Configurações do LiveHub</h1>
@@ -42,18 +46,22 @@ a{color:#b9a6ff}
 
 <section id="status"><h2>Status</h2>
   <div class="st" id="st"></div>
-  <div class="row mut">Login da Twitch (só para recompensas): <b id="tlogin">...</b></div>
+  <div class="row mut">Login da Twitch: <b id="tlogin">...</b></div>
+  <div class="row mut">Follows da Twitch no feed: <b id="st_follow">...</b></div>
+  <div class="row mut">Recompensas: <b id="st_resg">...</b></div>
 </section>
 
-<section id="twitch"><h2>Canal da Twitch</h2>
-  <label for="tw_canal">Nome do seu canal</label><input type="text" id="tw_canal" placeholder="meucanal" autocomplete="off">
-  <div class="mut">É só isso que o chat precisa para funcionar.</div>
-</section>
-
-<section id="recompensas"><h2>Recompensas com som (opcional)</h2>
-  <p class="mut"><b>Só é necessário se você quiser usar as recompensas do canal com som. Sem isso, o chat geral e o feed funcionam normalmente.</b></p>
-  <p class="mut" style="color:#f0b45a"><b>Requer canal Afiliado ou Parceiro da Twitch</b> — só esses canais têm pontos do canal e recompensas. Se o seu ainda não é, pule esta parte.</p>
-  <p class="mut">Com o app configurado, o chat também mostra os badges da Twitch (sub, mod, VIP).</p>
+<section id="twitch"><h2>Twitch</h2>
+  <p class="mut">Escolha como a Twitch entra no LiveHub. O chat da Twitch funciona nas duas opções.</p>
+  <div class="card" id="op1">
+    <h3>Opção 1 — Conectar com a Twitch (recomendado)</h3>
+    <p><b>Feed 100% completo.</b> Ao conectar você ganha:</p>
+    <ul class="ok">
+      <li>&#10003; Follows da Twitch no feed</li>
+      <li>&#10003; Badges da Twitch no chat (sub, mod, VIP)</li>
+      <li>&#10003; Recompensas com som (só para canais Afiliados ou Parceiros da Twitch)</li>
+    </ul>
+    <p class="mut">Para conectar você cria o seu próprio aplicativo da Twitch (é grátis e leva 2 minutos):</p>
   <details><summary>Como criar o aplicativo da Twitch (passo a passo)</summary>
     <ol>
       <li>Abra <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a> (sua conta precisa ter a verificação em duas etapas / 2FA ativada).</li>
@@ -66,13 +74,20 @@ a{color:#b9a6ff}
       <li>Clique em <b>Novo segredo</b>, copie o segredo e cole abaixo.</li>
     </ol>
   </details>
-  <label for="tw_id">Client ID (ID do cliente)</label><input type="text" id="tw_id" autocomplete="off">
-  <label for="tw_sec">Client Secret (segredo do cliente)</label><input type="password" id="tw_sec" autocomplete="new-password">
-  <div class="mut">Deixe o segredo em branco para manter o atual. Trocar o ID ou o segredo exige conectar de novo.</div>
-  <div class="row">
-    <button class="p" id="btn_conectar" onclick="location='/login'" disabled>Conectar com a Twitch</button>
-    <button class="d" id="btn_desc" onclick="desconectar()">Desconectar</button>
-    <span class="mut" id="tw_dica"></span>
+    <div class="mut" id="tw_nota" style="display:none;color:#8fd19e"></div>
+  </div>
+  <div class="card" id="op2">
+    <h3>Opção 2 — Só o nome/link do canal</h3>
+    <label for="tw_canal">Nome ou link do seu canal</label><input type="text" id="tw_canal" placeholder="meucanal, @meucanal ou https://www.twitch.tv/meucanal" autocomplete="off">
+    <div class="mut">Aceita <code>nome</code>, <code>@nome</code> ou <code>https://www.twitch.tv/nome</code>. É só isso que o chat precisa. Este campo é o mesmo da Opção 1: se você conectar, ele é preenchido com a conta conectada.</div>
+    <div class="aviso"><b>Sem login você perde:</b>
+      <ul>
+        <li>&#10007; Follows da Twitch no feed</li>
+        <li>&#10007; Badges da Twitch no chat</li>
+        <li>&#10007; Recompensas com som</li>
+      </ul>
+      <b>Continua funcionando:</b> chat da Twitch, subs, resubs, presentes de sub, bits e raids no feed, e todas as outras plataformas.
+    </div>
   </div>
 </section>
 
@@ -153,6 +168,7 @@ a{color:#b9a6ff}
 <script>
 const $ = id => document.getElementById(id);
 let U = {}, ST = null;
+let autoCanal = false;
 const NOMES = {twitch:'Twitch', kick:'Kick', youtube:'YouTube', tiktok:'TikTok', streamelements:'StreamElements'};
 
 function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = ok ? 'ok' : 'err'; }
@@ -177,6 +193,20 @@ function pintarStatus(s) {
   }
   const t = s.twitch;
   $('tlogin').textContent = t.connected ? (t.login || 'conectado') : 'não conectado (opcional)';
+  const as = t.assinaturas || {};
+  $('st_follow').textContent = as.follow === 'ativo' ? 'ativo' : 'inativo (conecte a Twitch)';
+  $('st_resg').textContent = as.resgates === 'ativo' ? 'ativas'
+    : as.resgates === 'indisponivel_afiliado' ? 'indisponíveis (canal não é Afiliado/Parceiro)' : 'inativas (conecte a Twitch)';
+  if (t.connected && t.login && !autoCanal) {
+    autoCanal = true;
+    const atual = ($('tw_canal').value || '').trim().toLowerCase();
+    if (atual !== t.login.toLowerCase()) {
+      $('tw_canal').value = t.login;
+      api('/api/config', {twitch:{channel:t.login}});
+      $('tw_nota').textContent = 'O canal foi preenchido com a conta conectada (' + t.login + '), porque follows e recompensas são sempre da conta que fez o login.';
+      $('tw_nota').style.display = '';
+    }
+  }
   $('btn_conectar').disabled = !(t.client_id && t.has_secret);
   $('btn_desc').disabled = !t.connected;
   $('tw_dica').textContent = (t.client_id && t.has_secret) ? '' : 'Salve o Client ID e o Client Secret primeiro.';

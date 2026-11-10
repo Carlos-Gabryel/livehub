@@ -45,6 +45,10 @@ class FakeTwitch:
         if self.api_401:
             self.api_401 -= 1
             return web.json_response({"message": "Invalid OAuth token"}, status=401)
+        if getattr(self, "sem_resgates", False):
+            corpo = await req.json()
+            if corpo["type"] == eventsub.TIPO:
+                return web.json_response({"message": "must be partner or affiliate"}, status=403)
         self.subs.append({"auth": req.headers["Authorization"], "client": req.headers["Client-Id"],
                           "body": await req.json()})
         return web.json_response({"data": []}, status=202)
@@ -412,5 +416,46 @@ async def test_follow_sem_escopo_pula(amb):
         await espera(lambda: svc.eventsub.inscrito)
         await asyncio.sleep(0.3)
         assert [x["body"]["type"] for x in fake.subs] == [eventsub.TIPO]
+    finally:
+        tarefa.cancel()
+
+
+async def test_nao_afiliado_follow_continua(amb):
+    fake, s = amb
+    fake.sem_resgates = True
+
+    async def script(ws, n, path):
+        await ws.send_str(welcome("S1", 30))
+        await ws.send_str(follow())
+        await asyncio.sleep(30)
+
+    fake.script = script
+    hub = Hub()
+    svc = Servico(s, hub)
+    tarefa = asyncio.create_task(svc.eventsub.run())
+    try:
+        await espera(lambda: len(hub.interacoes) == 1)
+        assert hub.interacoes[0]["tipo"] == "follow"
+        assert svc.eventsub.assinaturas == {"follow": "ativo", "resgates": "indisponivel_afiliado"}
+        assert svc.eventsub.inscrito and svc.eventsub.status()["assinaturas"]["follow"] == "ativo"
+        await asyncio.sleep(1.5)
+        assert fake.ws_conexoes == 1 and svc.eventsub.conectado  # sem loop de reconexao
+    finally:
+        tarefa.cancel()
+
+
+async def test_ambas_assinaturas_ativas(amb):
+    fake, s = amb
+
+    async def script(ws, n, path):
+        await ws.send_str(welcome("S1", 30))
+        await asyncio.sleep(30)
+
+    fake.script = script
+    svc = Servico(s, Hub())
+    tarefa = asyncio.create_task(svc.eventsub.run())
+    try:
+        await espera(lambda: svc.eventsub.inscrito)
+        assert svc.eventsub.assinaturas == {"follow": "ativo", "resgates": "ativo"}
     finally:
         tarefa.cancel()

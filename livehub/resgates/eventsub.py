@@ -22,12 +22,14 @@ class EventSub:
         self.on_follow = on_follow  # async callable(evento: dict) | None
         self.conectado = False
         self.inscrito = False
+        self.assinaturas = {"follow": "inativo", "resgates": "inativo"}
         self.erro = None
         self.vistos: list[str] = []
         self.recarregar_url = None
 
     def status(self):
-        return {"conectado": self.conectado, "inscrito": self.inscrito, "erro": self.erro}
+        return {"conectado": self.conectado, "inscrito": self.inscrito, "erro": self.erro,
+                "assinaturas": dict(self.assinaturas)}
 
     async def run(self):
         backoff = 1
@@ -42,6 +44,7 @@ class EventSub:
                 self.erro = f"{type(e).__name__}: {e}"
                 log.warning("Conexão EventSub caiu: %s (nova tentativa em %ss)", self.erro, backoff)
             self.conectado = self.inscrito = False
+            self.assinaturas = {"follow": "inativo", "resgates": "inativo"}
             await asyncio.sleep(backoff)
             backoff = min(backoff * 2, 60)
 
@@ -101,22 +104,35 @@ class EventSub:
             uid = self.auth.user_id
         if not uid:
             raise RuntimeError("id do canal desconhecido (validacao do token falhou)")
+        self.assinaturas = {"follow": "inativo", "resgates": "inativo"}
         body = {"type": TIPO, "version": "1", "condition": {"broadcaster_user_id": uid},
                 "transport": {"method": "websocket", "session_id": session_id}}
         status, j = await self.auth.api("POST", "/eventsub/subscriptions", json=body)
         if status in (200, 202):
-            self.inscrito = True
+            self.assinaturas["resgates"] = "ativo"
             log.info("Assinatura criada: %s", TIPO)
-        else:
+        elif status == 401:
             raise RuntimeError(f"falha ao assinar ({status}): {j}")
+        elif status == 403:  # canal sem pontos do canal (nao e Afiliado/Parceiro): normal, nao e erro
+            self.assinaturas["resgates"] = "indisponivel_afiliado"
+            log.info("Recompensas indisponiveis (canal nao e Afiliado/Parceiro): %s", j)
+        else:
+            self.assinaturas["resgates"] = "erro"
+            log.warning("Falha ao assinar %s (%s): %s", TIPO, status, j)
         esc = await self.auth.escopos()
         if esc is not None and const.ESCOPO_SEGUIDORES not in esc:
             log.warning("Token sem o escopo %s: follows não serão assinados (entre de novo)", const.ESCOPO_SEGUIDORES)
-            return
-        body = {"type": TIPO_FOLLOW, "version": "2", "condition": {"broadcaster_user_id": uid, "moderator_user_id": uid},
-                "transport": {"method": "websocket", "session_id": session_id}}
-        status, j = await self.auth.api("POST", "/eventsub/subscriptions", json=body)
-        if status in (200, 202):
-            log.info("Assinatura criada: %s", TIPO_FOLLOW)
+            self.assinaturas["follow"] = "sem_escopo"
         else:
-            log.warning("Falha ao assinar %s (%s): %s", TIPO_FOLLOW, status, j)
+            body = {"type": TIPO_FOLLOW, "version": "2", "condition": {"broadcaster_user_id": uid, "moderator_user_id": uid},
+                    "transport": {"method": "websocket", "session_id": session_id}}
+            status, j = await self.auth.api("POST", "/eventsub/subscriptions", json=body)
+            if status in (200, 202):
+                self.assinaturas["follow"] = "ativo"
+                log.info("Assinatura criada: %s", TIPO_FOLLOW)
+            else:
+                self.assinaturas["follow"] = "erro"
+                log.warning("Falha ao assinar %s (%s): %s", TIPO_FOLLOW, status, j)
+        self.inscrito = "ativo" in self.assinaturas.values()
+        if not self.inscrito:
+            self.erro = "nenhuma assinatura ativa"
