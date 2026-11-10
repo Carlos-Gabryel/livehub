@@ -16,7 +16,7 @@ async def rt(data_dir, monkeypatch):
     cfg["web_port"] = porta_livre()
     settings.save_config(cfg)
     sec = settings.load_secrets()
-    sec["twitch"].update(client_id="cid1", client_secret=SEGREDO, access_token=TOKEN, refresh_token="refresh-qqq",
+    sec["twitch"].update(modo="app_proprio", client_id="cid1", client_secret=SEGREDO, access_token=TOKEN, refresh_token="refresh-qqq",
                          user_id="42", login="ana")
     sec["streamelements"]["jwt"] = JWT
     settings.save_secrets(sec)
@@ -63,7 +63,7 @@ async def test_get_nunca_vaza_segredos(rt):
     for v in (SEGREDO, TOKEN, JWT, "refresh-qqq"):
         assert v not in txt
     assert j["twitch"] == {"client_id": "cid1", "has_secret": True, "login": "ana", "user_id": "42", "connected": True,
-                    "assinaturas": {"follow": "inativo", "resgates": "inativo"}}
+                    "modo": "app_proprio", "login_expirado": False, "assinaturas": {"follow": "inativo", "resgates": "inativo"}}
     assert j["streamelements"]["has_jwt"] is True
     assert j["audio"]["saidas"] == ["Alto-falante", "Fone"]
     assert j["urls"]["dock"].endswith(f":{rt.cfg['web_port']}/dock")

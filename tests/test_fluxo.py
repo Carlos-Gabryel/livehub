@@ -107,7 +107,7 @@ async def amb(monkeypatch, faudio):
     porta = site._server.sockets[0].getsockname()[1]
     base = f"http://127.0.0.1:{porta}"
     sec = settings.load_secrets()
-    sec["twitch"].update(client_id="CID", client_secret="SEC", access_token="AT0", refresh_token="RT0",
+    sec["twitch"].update(modo="app_proprio", client_id="CID", client_secret="SEC", access_token="AT0", refresh_token="RT0",
                          expires_at=time.time() + 3600, user_id="36599", login="streamer")
     settings.save_secrets(sec)
     (paths.sons_dir() / SOM).write_bytes(b"x")
@@ -195,7 +195,7 @@ async def test_login_code_exchange(amb):
 async def test_login_sem_credenciais(amb):
     fake, s = amb
     sec = settings.load_secrets()
-    sec["twitch"].update(client_id="", client_secret="")
+    sec["twitch"].update(modo="app_proprio", client_id="", client_secret="")
     settings.save_secrets(sec)
     with pytest.raises(RuntimeError, match="nao configurados"):
         await Auth(s).iniciar_login()

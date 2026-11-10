@@ -97,7 +97,8 @@ def aplicar(body: dict, cfg: dict, sec: dict):
             sec["twitch"][k] = v
             info["credencial_mudou"] = True
     if info["credencial_mudou"]:
-        sec["twitch"].update(access_token="", refresh_token="", expires_at=0, user_id="", login="")
+        sec["twitch"].update(modo="app_proprio", access_token="", refresh_token="", expires_at=0,
+                             user_id="", login="", login_expirado=False)
 
     k = _secao(body, "kick")
     if "channel" in k:
@@ -193,6 +194,7 @@ def estado(rt) -> dict:
         "status": dict(rt.hub.status),
         "twitch": {"client_id": tw["client_id"], "has_secret": bool(tw["client_secret"]),
                    "login": tw["login"], "user_id": tw["user_id"], "connected": bool(tw["refresh_token"]),
+                   "modo": tw["modo"], "login_expirado": bool(tw.get("login_expirado")),
                    "assinaturas": assin},
         "streamelements": {"has_jwt": bool(sec["streamelements"]["jwt"])},
         "audio": {"saidas": saidas, "atual": cfg["audio"]["output_device"]},

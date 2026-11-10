@@ -25,7 +25,8 @@ table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:5px 8px;
   <span id="pl" class="msg"></span>
   <button class="d" onclick="parar()">Parar som e limpar fila</button>
 </div>
-<div id="semapp" class="msg" style="display:none;color:#f0b45a;margin-top:8px">Conecte a Twitch para ter follows da Twitch no feed, badges no chat e, se o canal for Afiliado ou Parceiro, recompensas com som. Veja em <a href="/config#twitch" style="color:#b9a6ff">Configurações &rarr; Twitch</a>. O chat e o feed (subs, bits, raids) funcionam normalmente sem login.</div>
+<div id="semapp" class="msg" style="display:none;color:#f0b45a;margin-top:8px">Para ter follows da Twitch no feed, badges no chat e, se o canal for Afiliado ou Parceiro, recompensas com som, <a href="/config#twitch" style="color:#b9a6ff">entre com a Twitch</a> em Configurações. O chat e o feed (subs, bits, raids) funcionam normalmente sem login.</div>
+<div id="expirou" class="msg" style="display:none;color:#f0b45a;margin-top:8px">Sua sessão da Twitch expirou — clique em <a href="/config#twitch" style="color:#b9a6ff">Entrar com a Twitch</a> de novo.</div>
 <div class="bar" style="margin-top:8px"><label for="saida">Saída de som das recompensas</label>
   <select id="saida" onchange="salvarSaida()" style="width:auto;max-width:320px"></select>
   <button onclick="testarSaida()">Testar</button><span id="saida_msg" class="msg"></span></div>
@@ -45,7 +46,7 @@ async function status(){
   $('d1').className='dot'+(s.logado?' ok':'');$('t1').textContent=s.logado?('Logado'+(s.canal?' como '+s.canal:'')):(s.configurado?'Não conectado':'Não conectado');
   $('d2').className='dot'+(s.conectado&&s.inscrito?' ok':'');
   $('t2').textContent=s.conectado?(s.inscrito?'Conectado (escutando resgates)':'Conectado, sem assinatura'):'Desconectado';
-  $('semapp').style.display=s.configurado?'none':'block';$('login').style.display=s.configurado?'':'none';
+  $('semapp').style.display=s.logado?'none':'block';$('expirou').style.display=s.login_expirado?'block':'none';$('login').style.display=(s.logado&&s.modo==='app_proprio')?'':'none';
   $('login').textContent=s.logado?'Entrar de novo':'Entrar com a Twitch';
   $('err').textContent=[s.erro_login,s.erro].filter(Boolean).join(' | ');
   $('pl').textContent=s.player.tocando?`Tocando: ${s.player.tocando} (fila ${s.player.fila})`:'';

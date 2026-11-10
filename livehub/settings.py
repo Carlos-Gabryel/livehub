@@ -3,6 +3,7 @@ import copy, json, logging, os, tempfile
 from pathlib import Path
 
 from . import paths
+from .resgates import const
 
 log = logging.getLogger("settings")
 
@@ -37,7 +38,7 @@ DEFAULT_CONFIG = {
 }
 DEFAULT_SECRETS = {
     "twitch": {"client_id": "", "client_secret": "", "access_token": "", "refresh_token": "",
-               "expires_at": 0, "user_id": "", "login": ""},
+               "expires_at": 0, "user_id": "", "login": "", "login_expirado": False},
     "streamelements": {"jwt": ""},
 }
 
@@ -117,8 +118,15 @@ def save_config(cfg: dict):
     atomic_write_json(config_path(), deep_merge(DEFAULT_CONFIG, cfg))
 
 
+MODOS_TWITCH = ("dispositivo", "app_proprio")
+
+
 def load_secrets() -> dict:
-    return _load_with_defaults(secrets_path(), DEFAULT_SECRETS, 0o600)
+    sec = _load_with_defaults(secrets_path(), DEFAULT_SECRETS, 0o600)
+    t = sec["twitch"]
+    if t.get("modo") not in MODOS_TWITCH:  # migracao: quem ja tinha app proprio continua nele
+        t["modo"] = "app_proprio" if (t.get("client_id") and t.get("client_secret")) else "dispositivo"
+    return sec
 
 
 def save_secrets(sec: dict):
@@ -136,7 +144,10 @@ def save_mapeamento(m: dict):
 def runtime_config() -> dict:
     """config.json + credenciais necessarias aos modulos de chat (twitch client_id/secret, SE jwt)."""
     cfg, sec = load_config(), load_secrets()
-    cfg["twitch"] = {**cfg["twitch"], "client_id": sec["twitch"]["client_id"],
-                     "client_secret": sec["twitch"]["client_secret"]}
+    t = sec["twitch"]
+    disp = t["modo"] == "dispositivo"
+    cfg["twitch"] = {**cfg["twitch"], "modo": t["modo"],
+                     "client_id": const.LIVEHUB_CLIENT_ID if disp else t["client_id"],
+                     "client_secret": "" if disp else t["client_secret"]}
     cfg["streamelements"] = {"jwt": sec["streamelements"]["jwt"]}
     return cfg

@@ -3,6 +3,7 @@ import collections, logging, time
 from aiohttp import web
 
 from .. import paths, settings
+from ..web import seguro
 from . import const, sons
 from .auth import Auth
 from .eventsub import EventSub
@@ -70,6 +71,7 @@ def add_routes(app: web.Application, svc: Servico):
         return web.json_response({
             "logado": svc.auth.logado, **svc.eventsub.status(), "canal": svc.auth.login,
             "configurado": svc.auth.configurado, "erro_login": svc.auth.ultimo_erro,
+            "modo": svc.auth.modo, "login_expirado": svc.auth.login_expirado,
             "pode_gerenciar": None if esc is None else const.ESCOPO_GERENCIAR in esc,
             "pode_seguidores": None if esc is None else const.ESCOPO_SEGUIDORES in esc,
             "player": svc.player.estado()})
@@ -83,6 +85,46 @@ def add_routes(app: web.Application, svc: Servico):
         except OSError as e:
             return web.Response(status=500, text=f"Não consegui abrir a porta {const.AUTH_PORT}: {e}")
         raise web.HTTPFound(url)
+
+    def _proibido():
+        return web.json_response({"erro": "Origem não permitida."}, status=403)
+
+    @r.post("/api/twitch/dispositivo/iniciar")
+    async def disp_iniciar(req):
+        if not seguro(req):
+            return _proibido()
+        try:
+            return web.json_response(await svc.auth.iniciar_dispositivo())
+        except Exception as e:
+            log.warning("Login por codigo nao iniciou: %r", type(e).__name__)
+            return web.json_response({"erro": "Não consegui falar com a Twitch. Tente de novo."}, status=502)
+
+    @r.get("/api/twitch/dispositivo/estado")
+    async def disp_estado(req):
+        return web.json_response(svc.auth.estado_dispositivo())
+
+    @r.post("/api/twitch/dispositivo/cancelar")
+    async def disp_cancelar(req):
+        if not seguro(req):
+            return _proibido()
+        await svc.auth.cancelar_dispositivo()
+        return web.json_response({"ok": True})
+
+    @r.post("/api/twitch/modo")
+    async def twitch_modo(req):
+        if not seguro(req):
+            return _proibido()
+        try:
+            b = await req.json()
+            modo = b.get("modo") if isinstance(b, dict) else None
+            mudou = await svc.auth.definir_modo(modo)
+        except (ValueError, RuntimeError) as e:
+            return web.json_response({"erro": str(e)}, status=400)
+        except Exception:
+            return web.json_response({"erro": "JSON inválido."}, status=400)
+        if mudou and svc.auth.on_reload:
+            await svc.auth.on_reload()
+        return web.json_response({"ok": True, "modo": svc.auth.modo})
 
     @r.post("/api/logout")
     async def logout(req):

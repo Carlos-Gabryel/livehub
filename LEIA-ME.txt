@@ -77,9 +77,13 @@ OPCAO 1 - Conectar com a Twitch (RECOMENDADO). Feed 100% completo:
   + Badges da Twitch no chat (sub, mod, VIP)
   + Recompensas com som (SO para canais Afiliados ou Parceiros da Twitch;
     se o seu canal ainda nao e, o resto continua funcionando)
-  Voce cria o seu proprio aplicativo da Twitch (gratis, 2 minutos; a
-  pagina tem o passo a passo), cola o Client ID e o Client Secret e clica
-  em "Conectar com a Twitch". O nome do canal e preenchido sozinho.
+  Clique em "Entrar com a Twitch": o LiveHub mostra um codigo; confirme-o
+  na pagina da Twitch (twitch.tv/activate, abre sozinha). Nao precisa
+  criar aplicativo nenhum. O nome do canal e preenchido sozinho.
+  A Twitch pode pedir para entrar de novo a cada 30 dias.
+  Avancado (opcional): em "Usar meu proprio aplicativo da Twitch" voce
+  pode criar o seu aplicativo em dev.twitch.tv e colar o Client ID e o
+  Client Secret.
 
 OPCAO 2 - So o nome/link do canal (sem login). Aceita nome, @nome ou
   https://www.twitch.tv/nome. Sem login voce PERDE:

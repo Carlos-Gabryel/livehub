@@ -1,4 +1,4 @@
-"""Twitch: IRC anonimo (somente leitura) via WebSocket + Helix (app token) para icones de badges."""
+"""Twitch: IRC anonimo (somente leitura) via WebSocket + Helix (app token ou token do usuario) para icones de badges."""
 import asyncio, logging, random, re, time
 import aiohttp
 
@@ -8,16 +8,19 @@ ROLE = {"broadcaster": 4, "moderator": 3, "vip": 2}
 
 
 class Helix:
-    def __init__(self, session, client_id, secret):
+    def __init__(self, session, client_id, secret, token_fn=None):
         self.s, self.cid, self.secret = session, client_id, secret
+        self.token_fn = token_fn  # async () -> token de usuario (modo dispositivo, sem segredo)
         self.token, self.exp = None, 0
         self.badges = {}  # (set_id, version) -> url
 
     @property
     def enabled(self):
-        return bool(self.cid and self.secret)
+        return bool(self.cid and (self.secret or self.token_fn))
 
     async def _token(self):
+        if self.token_fn and not self.secret:
+            return await self.token_fn()  # sempre pega o atual: o Auth renova e rotaciona
         if self.token and time.time() < self.exp - 60:
             return self.token
         async with self.s.post("https://id.twitch.tv/oauth2/token", data={
@@ -155,7 +158,8 @@ class Twitch:
     def __init__(self, cfg, hub, session):
         self.channel = (cfg["twitch"].get("channel") or "").lower().lstrip("#")
         self.hub, self.s = hub, session
-        self.helix = Helix(session, cfg["twitch"].get("client_id"), cfg["twitch"].get("client_secret"))
+        self.helix = Helix(session, cfg["twitch"].get("client_id"), cfg["twitch"].get("client_secret"),
+                           cfg["twitch"].get("token_fn"))
         self.room_id = None
         self._uid = None
         self.third = {}  # nome -> url (7TV + BTTV)

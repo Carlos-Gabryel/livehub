@@ -36,7 +36,7 @@ def test_defaults_escritos_quando_ausente(data_dir):
     assert cfg["streamerbot_compat"] == {"enabled": False, "port": 8080}
     assert json.loads((data_dir / "config.json").read_text(encoding="utf-8")) == settings.DEFAULT_CONFIG
     sec = settings.load_secrets()
-    assert sec == settings.DEFAULT_SECRETS and (data_dir / "secrets.json").is_file()
+    assert sec["twitch"].pop("modo") == "dispositivo" and sec == settings.DEFAULT_SECRETS and (data_dir / "secrets.json").is_file()
 
 
 def test_deep_merge_preserva_padroes_e_extras(data_dir):
@@ -79,7 +79,7 @@ def test_json_corrompido_volta_aos_padroes(data_dir):
 
 def test_runtime_config_junta_credenciais(data_dir):
     sec = settings.load_secrets()
-    sec["twitch"].update(client_id="cid", client_secret="sec", access_token="nao-vaza")
+    sec["twitch"].update(modo="app_proprio", client_id="cid", client_secret="sec", access_token="nao-vaza")
     sec["streamelements"]["jwt"] = "jwt1"
     settings.save_secrets(sec)
     rc = settings.runtime_config()

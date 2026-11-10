@@ -30,7 +30,7 @@ async def test_app_unificado_serve_tudo(rt):
                 assert r.status == 200, rota
         async with s.get(base(rt) + "/api/status") as r:
             j = await r.json()
-            assert j["logado"] is False and j["canal"] == "" and j["configurado"] is False
+            assert j["logado"] is False and j["canal"] == "" and j["configurado"] is True
         async with s.get(base(rt) + "/recompensas") as r:
             assert "Resgates" in await r.text()
         # Host estranho e barrado em qualquer rota

@@ -82,6 +82,7 @@ class Runtime:
         self.cfg = settings.runtime_config()
         self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=15, sock_read=60))
         self.svc = servico.Servico(self.session, self.hub)
+        self.svc.auth.on_reload = self.reload
         self.svc.player.start()
         self.runner = web.AppRunner(self.make_web_app(), access_log=None)
         await self.runner.setup()
@@ -100,7 +101,11 @@ class Runtime:
                 log.info("%s: nao configurado, nao sera iniciado", nome)
                 self._status_inativo(nome)
                 continue
-            self._spawn(nome, cls(cfg, self.hub, self.session).run)
+            c = cfg
+            if nome == "twitch" and cfg["twitch"].get("modo") == "dispositivo" and self.svc.auth.logado:
+                # badges via token do usuario (renovado pelo Auth), sem segredo
+                c = {**cfg, "twitch": {**cfg["twitch"], "token_fn": self.svc.auth.token_usuario}}
+            self._spawn(nome, cls(c, self.hub, self.session).run)
         self._spawn("eventsub", self.svc.eventsub_main)
 
     def _status_inativo(self, nome):

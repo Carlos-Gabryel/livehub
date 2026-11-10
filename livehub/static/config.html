@@ -61,20 +61,41 @@ a{color:#b9a6ff}
       <li>&#10003; Badges da Twitch no chat (sub, mod, VIP)</li>
       <li>&#10003; Recompensas com som (só para canais Afiliados ou Parceiros da Twitch)</li>
     </ul>
-    <p class="mut">Para conectar você cria o seu próprio aplicativo da Twitch (é grátis e leva 2 minutos):</p>
-  <details><summary>Como criar o aplicativo da Twitch (passo a passo)</summary>
-    <ol>
-      <li>Abra <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a> (sua conta precisa ter a verificação em duas etapas / 2FA ativada).</li>
-      <li>Clique em <b>Registrar seu aplicativo</b>.</li>
-      <li>Nome: qualquer um (ex.: LiveHub).</li>
-      <li>URL de redirecionamento OAuth, exatamente: <code id="redir">http://localhost:3000/auth</code> <button type="button" onclick="copiar('http://localhost:3000/auth',this)">Copiar</button></li>
-      <li>Categoria: <b>Broadcaster Suite</b>. Tipo de cliente: <b>Confidencial</b>.</li>
-      <li>Clique em <b>Criar</b>, depois em <b>Gerenciar</b> no aplicativo criado.</li>
-      <li>Copie o <b>ID do cliente</b> e cole abaixo.</li>
-      <li>Clique em <b>Novo segredo</b>, copie o segredo e cole abaixo.</li>
-    </ol>
-  </details>
+    <div class="aviso" id="tw_expirou" style="display:none">Sua sessão da Twitch expirou — clique em <b>Entrar com a Twitch</b> de novo.</div>
+    <div id="tw_entrar">
+      <button type="button" class="p" id="btn_entrar" style="font-size:16px;padding:12px 24px" onclick="entrarTwitch()">Entrar com a Twitch</button>
+    </div>
+    <div id="tw_codigo" style="display:none">
+      <div class="mut">Seu código:</div>
+      <div class="row"><code id="tw_cod" style="font-size:30px;letter-spacing:4px;padding:6px 14px"></code>
+        <button type="button" onclick="copiar($('tw_cod').textContent,this)">Copiar</button>
+        <button type="button" class="p" onclick="abrirAtivar()">Abrir twitch.tv/activate</button>
+        <button type="button" onclick="cancelarEntrada()">Cancelar</button></div>
+      <p class="mut">Confirme o código na página da Twitch. Esta tela atualiza sozinha.</p>
+    </div>
+    <div id="tw_ok" style="display:none"><span class="ok">&#10003; Conectado como <b id="tw_quem"></b></span>
+      <button type="button" class="d" id="btn_desc" onclick="desconectar()">Desconectar</button></div>
+    <div class="err" id="tw_erro" style="display:none"></div>
+    <div class="mut" style="margin-top:8px">A Twitch pode pedir para entrar de novo a cada 30 dias.</div>
     <div class="mut" id="tw_nota" style="display:none;color:#8fd19e"></div>
+    <details id="tw_avancado"><summary>Avançado: usar meu próprio aplicativo da Twitch</summary>
+      <p class="mut">Só se você preferir. Você cria um aplicativo na Twitch (grátis, leva 2 minutos):</p>
+      <ol>
+        <li>Abra <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a> (sua conta precisa ter a verificação em duas etapas / 2FA ativada).</li>
+        <li>Clique em <b>Registrar seu aplicativo</b>.</li>
+        <li>Nome: qualquer um (ex.: LiveHub).</li>
+        <li>URL de redirecionamento OAuth, exatamente: <code id="redir">http://localhost:3000/auth</code> <button type="button" onclick="copiar('http://localhost:3000/auth',this)">Copiar</button></li>
+        <li>Categoria: <b>Broadcaster Suite</b>. Tipo de cliente: <b>Confidencial</b>.</li>
+        <li>Clique em <b>Criar</b>, depois em <b>Gerenciar</b> no aplicativo criado.</li>
+        <li>Copie o <b>ID do cliente</b> e cole abaixo.</li>
+        <li>Clique em <b>Novo segredo</b>, copie o segredo e cole abaixo.</li>
+      </ol>
+      <label for="tw_id">Client ID</label><input type="text" id="tw_id" autocomplete="off">
+      <label for="tw_sec">Client Secret</label><input type="password" id="tw_sec" autocomplete="off">
+      <div class="row"><button type="button" id="btn_conectar" onclick="conectarAppProprio()">Conectar com meu aplicativo</button>
+        <span class="mut" id="tw_dica"></span></div>
+      <div class="mut">Ao salvar um Client ID e um Secret, o LiveHub passa a usar o seu aplicativo.</div>
+    </details>
   </div>
   <div class="card" id="op2">
     <h3>Opção 2 — Só o nome/link do canal</h3>
@@ -207,8 +228,10 @@ function pintarStatus(s) {
       $('tw_nota').style.display = '';
     }
   }
+  $('tw_expirou').style.display = t.login_expirado ? '' : 'none';
   $('btn_conectar').disabled = !(t.client_id && t.has_secret);
-  $('btn_desc').disabled = !t.connected;
+  $('tw_avancado').open = $('tw_avancado').open || t.modo === 'app_proprio';
+  if (!dispTimer) mostrarTwitch(t.connected ? 'conectado' : 'inativo', t.login);
   $('tw_dica').textContent = (t.client_id && t.has_secret) ? '' : 'Salve o Client ID e o Client Secret primeiro.';
 }
 function preencher(s) {
@@ -256,6 +279,40 @@ async function salvar() {
   msg(t, ok);
 }
 async function desconectar() { await api('/api/logout', {}); atualizarStatus(); }
+let dispTimer = null, dispUri = '';
+function mostrarTwitch(est, login) {
+  $('tw_entrar').style.display = (est === 'conectado' || est === 'aguardando') ? 'none' : '';
+  $('tw_codigo').style.display = est === 'aguardando' ? '' : 'none';
+  $('tw_ok').style.display = est === 'conectado' ? '' : 'none';
+  if (est === 'conectado') $('tw_quem').textContent = login || '';
+  const m = {expirado:'O código expirou. Clique em Entrar com a Twitch para tentar de novo.',
+             negado:'Você recusou o acesso na Twitch. Clique em Entrar com a Twitch para tentar de novo.',
+             erro:'Não deu certo. Clique em Entrar com a Twitch para tentar de novo.'}[est];
+  $('tw_erro').textContent = m || ''; $('tw_erro').style.display = m ? '' : 'none';
+  $('btn_entrar').textContent = m ? 'Tentar de novo' : 'Entrar com a Twitch';
+}
+function pararDisp() { clearInterval(dispTimer); dispTimer = null; }
+async function entrarTwitch() {
+  const r = await api('/api/twitch/dispositivo/iniciar', {});
+  if (!r.ok) { $('tw_erro').textContent = r.j.erro || 'Erro.'; $('tw_erro').style.display = ''; return; }
+  $('tw_cod').textContent = r.j.user_code; dispUri = r.j.verification_uri;
+  mostrarTwitch('aguardando'); window.open(dispUri, '_blank', 'noopener');
+  pararDisp(); dispTimer = setInterval(consultarDisp, 2000);
+}
+function abrirAtivar() { if (dispUri) window.open(dispUri, '_blank', 'noopener'); }
+async function consultarDisp() {
+  const r = await api('/api/twitch/dispositivo/estado'); if (!r.ok) return;
+  if (r.j.estado === 'aguardando') return;
+  pararDisp(); mostrarTwitch(r.j.estado, r.j.login);
+  if (r.j.estado === 'conectado') atualizarStatus();
+}
+async function cancelarEntrada() { pararDisp(); await api('/api/twitch/dispositivo/cancelar', {}); mostrarTwitch('inativo'); }
+async function conectarAppProprio() {
+  await salvar();
+  const r = await api('/api/twitch/modo', {modo:'app_proprio'});
+  if (!r.ok) { $('tw_dica').textContent = r.j.erro || 'Erro.'; return; }
+  location = '/login';
+}
 async function testarSom() {
   $('au_msg').textContent = 'Tocando...';
   const r = await api('/api/audio/testar', {device:$('au_dev').value});
