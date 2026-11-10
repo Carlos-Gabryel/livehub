@@ -3,7 +3,7 @@ import asyncio, logging, time
 import aiohttp
 from aiohttp import web
 
-from . import paths, settings
+from . import configweb, paths, settings
 from .chat import dock, sbserver
 from .chat.hub import Hub
 from .chat.kick import Kick
@@ -63,7 +63,8 @@ class Runtime:
     def make_web_app(self) -> web.Application:
         app = web.Application(middlewares=[seguranca])
         app[WEB_PORT] = self.cfg["web_port"]
-        dock.add_routes(app, self.hub, on_token=self.reload)
+        dock.add_routes(app, self.hub)
+        configweb.add_routes(app, self)
         servico.add_routes(app, self.svc)
         return app
 

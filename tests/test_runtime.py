@@ -24,8 +24,8 @@ def base(rt):
 
 async def test_app_unificado_serve_tudo(rt):
     async with aiohttp.ClientSession() as s:
-        for rota in ("/", "/dock", "/eventos", "/neutro", "/recompensas", "/api/status", "/status",
-                     "/api/sons", "/eventos/config", "/fonts/FiraCode-Bold.ttf"):
+        for rota in ("/config", "/dock", "/eventos", "/neutro", "/recompensas", "/api/status", "/status",
+                     "/api/sons", "/api/config", "/fonts/FiraCode-Bold.ttf"):
             async with s.get(base(rt) + rota) as r:
                 assert r.status == 200, rota
         async with s.get(base(rt) + "/api/status") as r:
@@ -84,9 +84,8 @@ async def test_reload_via_jwt_do_streamelements(rt, monkeypatch):
     from livehub import runtime
     monkeypatch.setitem(runtime.PLATAFORMAS, "streamelements", (Falso, runtime.PLATAFORMAS["streamelements"][1]))
     async with aiohttp.ClientSession() as s:
-        h = {"Content-Type": "application/x-www-form-urlencoded"}
-        async with s.post(base(rt) + "/eventos/config", data="jwt=abc123", headers=h) as r:
-            assert r.status == 200 and "Token salvo" in await r.text()
+        async with s.post(base(rt) + "/api/config", json={"streamelements": {"jwt": "abc123"}}) as r:
+            assert r.status == 200
     assert "streamelements" in rt.tasks
     assert settings.load_secrets()["streamelements"]["jwt"] == "abc123"
 

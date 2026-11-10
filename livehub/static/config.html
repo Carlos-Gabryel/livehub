@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><title>Configurações - LiveHub</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{color-scheme:dark;--bg:#0e0e10;--panel:#18181b;--line:#26262c;--fg:#efeff1;--mut:#898990;--tw:#9146ff;--ok:#3ddc84;--err:#e5484d}
+*{box-sizing:border-box}
+body{margin:0;padding:20px;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;max-width:760px;margin:auto}
+h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:0 0 10px;color:#b9a6ff}
+section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin:16px 0}
+label{display:block;margin:10px 0 3px;color:var(--mut);font-size:13px}
+input[type=text],input[type=password],input[type=number],select{width:100%;padding:8px;background:#0e0e10;color:var(--fg);border:1px solid #333;border-radius:4px;font:inherit}
+button{background:#2a2b33;color:var(--fg);border:1px solid #3a3b45;border-radius:4px;padding:7px 14px;font:inherit;cursor:pointer}
+button:hover:not(:disabled){background:#363744}button:disabled{opacity:.45;cursor:not-allowed}
+button.p{background:var(--tw);border-color:var(--tw);font-weight:600}button.d{background:#8a2d3b;border-color:#8a2d3b}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+.mut{color:var(--mut);font-size:13px}.ok{color:var(--ok)}.err{color:var(--err)}
+.st{display:flex;gap:16px;flex-wrap:wrap}.st span{display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:50%;background:#666;display:inline-block}.dot.ok{background:var(--ok)}.dot.bad{background:var(--err)}
+details{margin-top:10px}summary{cursor:pointer;color:#b9a6ff}
+ol{padding-left:20px}code{background:#0e0e10;padding:1px 5px;border-radius:3px;word-break:break-all}
+.url{display:flex;gap:8px;align-items:center;margin:4px 0}.url code{flex:1;padding:6px 8px}
+.link{margin-bottom:14px}
+#barra{position:sticky;bottom:0;background:var(--bg);padding:12px 0;display:flex;gap:12px;align-items:center}
+#msg{font-weight:600}
+a{color:#b9a6ff}
+</style></head><body>
+<h1>Configurações do LiveHub</h1>
+<div class="mut">Tudo é feito aqui, sem editar arquivos. Preencha o que quiser e clique em <b>Salvar</b> no fim da página.</div>
+
+<section id="status"><h2>Status</h2>
+  <div class="st" id="st"></div>
+  <div class="row mut">Twitch: <b id="tlogin">...</b></div>
+</section>
+
+<section id="twitch"><h2>Twitch</h2>
+  <label for="tw_canal">Nome do seu canal</label><input type="text" id="tw_canal" placeholder="meucanal" autocomplete="off">
+  <details><summary>Como criar o aplicativo da Twitch (passo a passo)</summary>
+    <ol>
+      <li>Abra <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a> (sua conta precisa ter a verificação em duas etapas / 2FA ativada).</li>
+      <li>Clique em <b>Registrar seu aplicativo</b>.</li>
+      <li>Nome: qualquer um (ex.: LiveHub).</li>
+      <li>URL de redirecionamento OAuth, exatamente: <code id="redir">http://localhost:3000/auth</code> <button type="button" onclick="copiar('http://localhost:3000/auth',this)">Copiar</button></li>
+      <li>Categoria: <b>Broadcaster Suite</b>. Tipo de cliente: <b>Confidencial</b>.</li>
+      <li>Clique em <b>Criar</b>, depois em <b>Gerenciar</b> no aplicativo criado.</li>
+      <li>Copie o <b>ID do cliente</b> e cole abaixo.</li>
+      <li>Clique em <b>Novo segredo</b>, copie o segredo e cole abaixo.</li>
+    </ol>
+  </details>
+  <label for="tw_id">Client ID (ID do cliente)</label><input type="text" id="tw_id" autocomplete="off">
+  <label for="tw_sec">Client Secret (segredo do cliente)</label><input type="password" id="tw_sec" autocomplete="new-password">
+  <div class="mut">Deixe o segredo em branco para manter o atual. Trocar o ID ou o segredo exige conectar de novo.</div>
+  <div class="row">
+    <button class="p" id="btn_conectar" onclick="location='/login'" disabled>Conectar com a Twitch</button>
+    <button class="d" id="btn_desc" onclick="desconectar()">Desconectar</button>
+    <span class="mut" id="tw_dica"></span>
+  </div>
+</section>
+
+<section id="kick"><h2>Kick</h2>
+  <label for="kk_canal">Canal (nome ou link kick.com/seucanal)</label><input type="text" id="kk_canal" autocomplete="off">
+  <div id="kk_manual" style="display:none">
+    <p class="err">Não consegui descobrir os números do chat do Kick sozinho. Abra <a id="kk_link" href="#" target="_blank" rel="noopener"></a> no navegador e copie: o <code>"id"</code> do começo (channel_id) e o <code>"id"</code> dentro de <code>"chatroom":{"id"...}</code> (chatroom_id).</p>
+    <label for="kk_chat">chatroom_id</label><input type="number" id="kk_chat" min="1">
+    <label for="kk_chan">channel_id</label><input type="number" id="kk_chan" min="1">
+  </div>
+</section>
+
+<section id="youtube"><h2>YouTube e TikTok</h2>
+  <label for="yt_h">YouTube: @ do canal (ou link youtube.com/@canal)</label><input type="text" id="yt_h" autocomplete="off">
+  <label for="tt_u">TikTok: usuário (ou link tiktok.com/@usuario)</label><input type="text" id="tt_u" autocomplete="off">
+</section>
+
+<section id="streamelements"><h2>StreamElements (opcional, doações)</h2>
+  <details><summary>Onde achar o token</summary>
+    <p>No painel do StreamElements: Minha conta (Account) &rarr; Canais (Channels) &rarr; Mostrar segredos (Show secrets) &rarr; JWT Token.</p></details>
+  <label for="se_jwt">JWT Token</label><input type="password" id="se_jwt" autocomplete="new-password">
+  <div class="mut" id="se_estado"></div>
+  <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="se_rem"> Remover o token salvo</label>
+</section>
+
+<section id="sons"><h2>Sons</h2>
+  <label for="au_dev">Saída de áudio</label><select id="au_dev"></select>
+  <div class="row"><button onclick="testarSom()">Testar som</button><span class="mut" id="au_msg"></span></div>
+  <label>Pasta de sons</label>
+  <div class="url"><code id="sons_dir"></code><button onclick="abrirSons()">Abrir pasta de sons</button></div>
+  <p class="mut">Coloque seus arquivos .mp3, .wav, .ogg ou .flac nessa pasta e depois associe cada recompensa a um som em <a href="/recompensas">Recompensas</a>.</p>
+</section>
+
+<section id="obs"><h2>Links para o OBS</h2>
+  <div class="link"><b>Chat geral</b><div class="url"><code id="u_dock"></code><button onclick="copiar(U.dock,this)">Copiar</button></div>
+    <div class="mut">OBS: menu Docks &rarr; Docks de navegador personalizados.</div></div>
+  <div class="link"><b>Feed de eventos</b><div class="url"><code id="u_eventos"></code><button onclick="copiar(U.eventos,this)">Copiar</button></div>
+    <div class="mut">Follows, resgates, doações. Também como dock.</div></div>
+  <div class="link"><b>Chat para overlay</b><div class="url"><code id="u_neutro"></code><button onclick="copiar(U.neutro,this)">Copiar</button></div>
+    <div class="mut">Fonte de navegador. Opções no fim do link: <code>?sumir=SEGUNDOS</code> (some após N segundos; 0 = nunca), <code>max=15</code> (máximo de mensagens), <code>fonte=24</code> (tamanho da letra em px), <code>ignorar=nome1,nome2</code> (esconde esses usuários). Junte com &amp;, ex.: <code>?sumir=30&amp;max=10&amp;fonte=22</code>.</div></div>
+  <div class="link"><b>Painel de recompensas</b><div class="url"><code id="u_recompensas"></code><button onclick="copiar(U.recompensas,this)">Copiar</button></div>
+    <div class="mut">Dock para ligar recompensas a sons.</div></div>
+</section>
+
+<section id="avancado"><details><summary><b>Avançado</b></summary>
+  <label for="a_port">Porta do LiveHub</label><input type="number" id="a_port" min="1024" max="65535">
+  <div class="mut">Mudar a porta só vale depois de reiniciar o LiveHub (e os links do OBS mudam).</div>
+  <label style="display:flex;gap:6px;align-items:center;margin-top:14px"><input type="checkbox" id="sb_on"> Compatibilidade com Streamer.bot</label>
+  <div class="mut">Só é necessária para o overlay do nutty.gg. Se você usa o Streamer.bot de verdade na mesma porta, vai dar conflito: deixe desligada.</div>
+  <label for="sb_port">Porta do Streamer.bot compat</label><input type="number" id="sb_port" min="1024" max="65535">
+  <label for="yt_i">YouTube: checar a cada (segundos, 15 a 600)</label><input type="number" id="yt_i" min="15" max="600">
+  <label for="tt_i">TikTok: checar a cada (segundos, 15 a 600)</label><input type="number" id="tt_i" min="15" max="600">
+</details></section>
+
+<div id="barra"><button class="p" onclick="salvar()">Salvar</button><span id="msg"></span></div>
+
+<script>
+const $ = id => document.getElementById(id);
+let U = {}, ST = null;
+const NOMES = {twitch:'Twitch', kick:'Kick', youtube:'YouTube', tiktok:'TikTok', streamelements:'StreamElements'};
+
+function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = ok ? 'ok' : 'err'; }
+async function api(url, corpo) {
+  const r = await fetch(url, corpo === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(corpo)});
+  const j = await r.json().catch(() => ({}));
+  return {ok:r.ok, status:r.status, j};
+}
+function copiar(t, b) {
+  const fim = () => { const o = b.textContent; b.textContent = 'Copiado!'; setTimeout(() => b.textContent = o, 1200); };
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(fim);
+  else { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); fim(); }
+}
+function pintarStatus(s) {
+  $('st').innerHTML = '';
+  for (const [k, n] of Object.entries(NOMES)) {
+    const v = (s.status || {})[k] || '—', bom = /conectad|ok|ativo/i.test(v) && !/des/i.test(v);
+    const e = document.createElement('span');
+    e.innerHTML = '<i class="dot ' + (bom ? 'ok' : (/erro|falha/i.test(v) ? 'bad' : '')) + '"></i>';
+    e.append(n + ': ' + v);
+    $('st').appendChild(e);
+  }
+  const t = s.twitch;
+  $('tlogin').textContent = t.connected ? (t.login || 'conectado') : 'não conectado';
+  $('btn_conectar').disabled = !(t.client_id && t.has_secret);
+  $('btn_desc').disabled = !t.connected;
+  $('tw_dica').textContent = (t.client_id && t.has_secret) ? '' : 'Salve o Client ID e o Client Secret primeiro.';
+}
+function preencher(s) {
+  const c = s.config;
+  $('tw_canal').value = c.twitch.channel; $('tw_id').value = s.twitch.client_id;
+  $('tw_sec').value = ''; $('tw_sec').placeholder = s.twitch.has_secret ? '•••• salvo' : '';
+  $('kk_canal').value = c.kick.channel; $('kk_chat').value = c.kick.chatroom_id ?? ''; $('kk_chan').value = c.kick.channel_id ?? '';
+  $('yt_h').value = c.youtube.handle; $('tt_u').value = c.tiktok.username;
+  $('yt_i').value = c.youtube.check_interval; $('tt_i').value = c.tiktok.check_interval;
+  $('se_jwt').value = ''; $('se_jwt').placeholder = s.streamelements.has_jwt ? '•••• salvo' : '';
+  $('se_rem').checked = false; $('se_estado').textContent = s.streamelements.has_jwt ? 'Há um token salvo. Deixe em branco para manter.' : 'Nenhum token salvo.';
+  $('a_port').value = c.web_port; $('sb_on').checked = c.streamerbot_compat.enabled; $('sb_port').value = c.streamerbot_compat.port;
+  const sel = $('au_dev'); sel.innerHTML = '';
+  for (const n of ['', ...s.audio.saidas]) { const o = document.createElement('option'); o.value = n; o.textContent = n || 'Padrão do sistema'; sel.appendChild(o); }
+  sel.value = s.audio.atual; if (sel.value !== s.audio.atual) sel.value = '';
+  $('sons_dir').textContent = s.sons_dir;
+  U = s.urls; for (const k of Object.keys(U)) $('u_' + k).textContent = U[k];
+  $('kk_manual').style.display = 'none';
+}
+async function atualizarStatus() {
+  const r = await api('/api/config'); if (r.ok) { ST = r.j; pintarStatus(r.j); }
+}
+async function carregar() { const r = await api('/api/config'); if (r.ok) { ST = r.j; preencher(r.j); pintarStatus(r.j); } }
+async function salvar() {
+  const num = id => $(id).value === '' ? null : +$(id).value;
+  const corpo = {
+    twitch:{channel:$('tw_canal').value, client_id:$('tw_id').value, client_secret:$('tw_sec').value},
+    kick:{channel:$('kk_canal').value},
+    youtube:{handle:$('yt_h').value, check_interval:num('yt_i')}, tiktok:{username:$('tt_u').value, check_interval:num('tt_i')},
+    streamelements:{jwt:$('se_jwt').value, remover:$('se_rem').checked},
+    streamerbot_compat:{enabled:$('sb_on').checked, port:num('sb_port')},
+    web_port:num('a_port'), audio:{output_device:$('au_dev').value}
+  };
+  if ($('kk_manual').style.display !== 'none') { corpo.kick.chatroom_id = num('kk_chat'); corpo.kick.channel_id = num('kk_chan'); }
+  msg('Salvando...', true);
+  const r = await api('/api/config', corpo);
+  if (!r.ok) { msg((r.j.campo ? '[' + r.j.campo + '] ' : '') + (r.j.erro || 'Erro ao salvar.'), false); return; }
+  preencher(r.j); pintarStatus(r.j);
+  let t = 'Salvo!', ok = true;
+  if (r.j.restart_required) t += ' Reinicie o LiveHub para a nova porta valer.';
+  if (r.j.kick && r.j.kick.precisa_manual) {
+    $('kk_manual').style.display = ''; const l = 'https://kick.com/api/v2/channels/' + r.j.config.kick.channel;
+    $('kk_link').href = l; $('kk_link').textContent = l; t += ' Falta preencher os números do Kick (veja acima).'; ok = false;
+  }
+  msg(t, ok);
+}
+async function desconectar() { await api('/api/logout', {}); atualizarStatus(); }
+async function testarSom() {
+  $('au_msg').textContent = 'Tocando...';
+  const r = await api('/api/audio/testar', {device:$('au_dev').value});
+  $('au_msg').textContent = r.ok ? 'Se você ouviu o bipe, está tudo certo.' : (r.j.erro || 'Erro.');
+}
+async function abrirSons() { const r = await api('/api/abrir-sons', {}); if (!r.ok) $('au_msg').textContent = r.j.erro || 'Erro.'; }
+carregar(); setInterval(atualizarStatus, 5000);
+if (location.hash) setTimeout(() => { const e = document.querySelector(location.hash); if (e) e.scrollIntoView(); }, 300);
+</script></body></html>
