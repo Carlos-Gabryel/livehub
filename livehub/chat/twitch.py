@@ -157,6 +157,7 @@ class Twitch:
         self.hub, self.s = hub, session
         self.helix = Helix(session, cfg["twitch"].get("client_id"), cfg["twitch"].get("client_secret"))
         self.room_id = None
+        self._uid = None
         self.third = {}  # nome -> url (7TV + BTTV)
 
     async def _json(self, url):
@@ -164,15 +165,34 @@ class Twitch:
             r.raise_for_status()
             return await r.json(content_type=None)
 
-    async def load_third_party(self):
-        """Emotes 7TV e BTTV (globais + do canal). Falhas sao toleradas."""
-        third, uid = {}, None
-        try:
-            if self.helix.enabled:
+    async def _user_id(self):
+        """Id do canal: Helix se houver credenciais; senao (ou se falhar) endpoint publico do ivr.fi."""
+        if self._uid:
+            return self._uid
+        uid = None
+        if self.helix.enabled:
+            try:
                 u = await self.helix.get("users", login=self.channel)
                 uid = u[0]["id"] if u else None
-        except Exception as e:
-            log.warning("helix users falhou: %s", e)
+            except Exception as e:
+                log.warning("helix users falhou: %s", e)
+        if not uid:
+            try:
+                async with self.s.get("https://api.ivr.fi/v2/twitch/user", params={"login": self.channel},
+                                      headers={"User-Agent": "LiveHub/1.0"},
+                                      timeout=aiohttp.ClientTimeout(total=10)) as r:
+                    r.raise_for_status()
+                    d = await r.json(content_type=None)
+                uid = str(d[0]["id"]) if d else None
+            except Exception as e:
+                log.warning("ivr.fi falhou (seguindo sem emotes do canal): %s", e)
+        self._uid = uid
+        return uid
+
+    async def load_third_party(self):
+        """Emotes 7TV e BTTV (globais + do canal). Falhas sao toleradas."""
+        third = {}
+        uid = await self._user_id()
         jobs = [("7tv", "https://7tv.io/v3/emote-sets/global"), ("bttv", "https://api.betterttv.net/3/cached/emotes/global")]
         if uid:
             jobs += [("7tv", f"https://7tv.io/v3/users/twitch/{uid}"), ("bttv", f"https://api.betterttv.net/3/cached/users/twitch/{uid}")]

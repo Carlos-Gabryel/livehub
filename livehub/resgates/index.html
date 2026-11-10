@@ -25,6 +25,10 @@ table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:5px 8px;
   <span id="pl" class="msg"></span>
   <button class="d" onclick="parar()">Parar som e limpar fila</button>
 </div>
+<div id="semapp" class="msg" style="display:none;color:#f0b45a;margin-top:8px">Este painel é opcional: ele só é necessário para usar as recompensas do canal com som. Para ativar, configure o aplicativo da Twitch em <a href="/config#recompensas" style="color:#b9a6ff">Configurações &rarr; Recompensas com som</a>. O chat e o feed funcionam normalmente sem isso.</div>
+<div class="bar" style="margin-top:8px"><label for="saida">Saída de som das recompensas</label>
+  <select id="saida" onchange="salvarSaida()" style="width:auto;max-width:320px"></select>
+  <button onclick="testarSaida()">Testar</button><span id="saida_msg" class="msg"></span></div>
 <div id="err" class="msg"></div>
 <div id="aviso2" class="msg" style="color:#f0b45a;display:none;margin-top:8px">Falta a permissão de seguidores: entre de novo com a Twitch (clique em "Entrar de novo") para os follows aparecerem no feed.</div>
 <div id="aviso" class="msg" style="color:#f0b45a;display:none;margin-top:8px">É preciso entrar com a Twitch de novo para gerenciar recompensas (clique em "Entrar de novo").</div>
@@ -38,9 +42,10 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const post=(u,b)=>fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}).then(r=>r.json());
 async function status(){
   const s=await (await fetch('/api/status')).json();
-  $('d1').className='dot'+(s.logado?' ok':'');$('t1').textContent=s.logado?('Logado'+(s.canal?' como '+s.canal:'')):(s.configurado?'Não conectado':'Não conectado (falta client_id/client_secret da Twitch)');
+  $('d1').className='dot'+(s.logado?' ok':'');$('t1').textContent=s.logado?('Logado'+(s.canal?' como '+s.canal:'')):(s.configurado?'Não conectado':'Não conectado');
   $('d2').className='dot'+(s.conectado&&s.inscrito?' ok':'');
   $('t2').textContent=s.conectado?(s.inscrito?'Conectado (escutando resgates)':'Conectado, sem assinatura'):'Desconectado';
+  $('semapp').style.display=s.configurado?'none':'block';$('login').style.display=s.configurado?'':'none';
   $('login').textContent=s.logado?'Entrar de novo':'Entrar com a Twitch';
   $('err').textContent=[s.erro_login,s.erro].filter(Boolean).join(' | ');
   $('pl').textContent=s.player.tocando?`Tocando: ${s.player.tocando} (fila ${s.player.fila})`:'';
@@ -62,10 +67,18 @@ async function recompensas(){
 const dados=b=>{const d=b.closest('.rw');return{reward_id:d.dataset.id,titulo:d.dataset.t,som:d.querySelector('select').value,volume:+d.querySelector('input').value}};
 async function testar(b){const d=dados(b);if(!d.som)return;const r=await post('/api/testar',d);if(r.erro)alert(r.erro)}
 async function salvar(b){const r=await post('/api/mapeamento',dados(b));b.textContent=r.ok?'Salvo!':'Erro';setTimeout(()=>b.textContent='Salvar',1200)}
+async function saidas(){
+  const [a,c]=await Promise.all([fetch('/api/audio/saidas').then(r=>r.json()),fetch('/api/config').then(r=>r.json())]);
+  const sel=$('saida');sel.innerHTML='';
+  for(const n of ['',...(a.saidas||[])]){const o=document.createElement('option');o.value=n;o.textContent=n||'Padrão do sistema';sel.appendChild(o)}
+  const at=c.audio.atual;sel.value=at;if(sel.value!==at)sel.value='';
+}
+async function salvarSaida(){const r=await post('/api/config',{audio:{output_device:$('saida').value}});$('saida_msg').textContent=r.erro?r.erro:'Salvo!'}
+async function testarSaida(){$('saida_msg').textContent='Tocando...';const r=await post('/api/audio/testar',{device:$('saida').value});$('saida_msg').textContent=r.erro?r.erro:'Se você ouviu o bipe, está tudo certo.'}
 async function parar(){await post('/api/parar')}
 async function resgates(){
   const j=await (await fetch('/api/resgates')).json();
   $('rs').innerHTML=j.map(x=>`<tr><td>${x.hora}</td><td>${esc(x.titulo)}</td><td>${esc(x.usuario)}</td><td>${x.status}</td></tr>`).join('')||'<tr><td colspan=4 class="msg">Nenhum resgate ainda.</td></tr>';
 }
-status();resgates();setInterval(status,2000);setInterval(resgates,3000);
+saidas();status();resgates();setInterval(status,2000);setInterval(resgates,3000);
 </script></body></html>

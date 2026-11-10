@@ -42,11 +42,17 @@ a{color:#b9a6ff}
 
 <section id="status"><h2>Status</h2>
   <div class="st" id="st"></div>
-  <div class="row mut">Twitch: <b id="tlogin">...</b></div>
+  <div class="row mut">Login da Twitch (só para recompensas): <b id="tlogin">...</b></div>
 </section>
 
-<section id="twitch"><h2>Twitch</h2>
+<section id="twitch"><h2>Canal da Twitch</h2>
   <label for="tw_canal">Nome do seu canal</label><input type="text" id="tw_canal" placeholder="meucanal" autocomplete="off">
+  <div class="mut">É só isso que o chat precisa para funcionar.</div>
+</section>
+
+<section id="recompensas"><h2>Recompensas com som (opcional)</h2>
+  <p class="mut"><b>Só é necessário se você quiser usar as recompensas do canal com som. Sem isso, o chat geral e o feed funcionam normalmente.</b></p>
+  <p class="mut">Com o app configurado, o chat também mostra os badges da Twitch (sub, mod, VIP).</p>
   <details><summary>Como criar o aplicativo da Twitch (passo a passo)</summary>
     <ol>
       <li>Abra <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a> (sua conta precisa ter a verificação em duas etapas / 2FA ativada).</li>
@@ -92,7 +98,8 @@ a{color:#b9a6ff}
 </section>
 
 <section id="sons"><h2>Sons</h2>
-  <label for="au_dev">Saída de áudio</label><select id="au_dev"></select>
+  <label for="au_dev">Saída de som das recompensas</label><select id="au_dev"></select>
+  <div class="mut">Onde os sons das recompensas vão tocar. Ex.: um canal do Wave Link/VoiceMeeter que o OBS captura, ou a saída padrão.</div>
   <div class="row"><button onclick="testarSom()">Testar som</button><span class="mut" id="au_msg"></span></div>
   <label>Pasta de sons</label>
   <div class="url"><code id="sons_dir"></code><button onclick="abrirSons()">Abrir pasta de sons</button></div>
@@ -168,7 +175,7 @@ function pintarStatus(s) {
     $('st').appendChild(e);
   }
   const t = s.twitch;
-  $('tlogin').textContent = t.connected ? (t.login || 'conectado') : 'não conectado';
+  $('tlogin').textContent = t.connected ? (t.login || 'conectado') : 'não conectado (opcional)';
   $('btn_conectar').disabled = !(t.client_id && t.has_secret);
   $('btn_desc').disabled = !t.connected;
   $('tw_dica').textContent = (t.client_id && t.has_secret) ? '' : 'Salve o Client ID e o Client Secret primeiro.';

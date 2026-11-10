@@ -178,3 +178,28 @@ async def test_origem_estranha_403(rt):
             async with s.post(b(rt) + url, json={}, headers={"Origin": "http://evil.com"}) as r:
                 assert r.status == 403, url
     assert rt.reload_n == 0
+
+
+async def test_recompensas_tem_seletor_de_saida(rt):
+    async with aiohttp.ClientSession() as s:
+        async with s.get(b(rt) + "/recompensas") as r:
+            t = await r.text()
+        async with s.get(b(rt) + "/config") as r:
+            c = await r.text()
+    assert 'id="saida"' in t and "/api/audio/testar" in t and "/config#recompensas" in t
+    assert "Saída de som das recompensas" in t and "Saída de som das recompensas" in c
+    assert "Só é necessário se você quiser usar as recompensas" in c and "badges da Twitch" in c
+
+
+async def test_saida_alterada_vale_no_proximo_play(rt, monkeypatch):
+    import asyncio
+    chamadas = []
+    monkeypatch.setattr(audio, "tocar", lambda caminho, vol, dev: chamadas.append(dev))
+    st, _ = await post(rt, {"audio": {"output_device": "Fone"}})
+    assert st == 200
+    rt.svc.player.enfileirar("x.wav", 50)
+    for _ in range(50):
+        if chamadas:
+            break
+        await asyncio.sleep(0.05)
+    assert chamadas == ["Fone"]
