@@ -1,172 +1,252 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><title>Configurações - LiveHub</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/tema.css">
 <style>
-:root{color-scheme:dark;--bg:#0e0e10;--panel:#18181b;--line:#26262c;--fg:#efeff1;--mut:#898990;--tw:#9146ff;--ok:#3ddc84;--err:#e5484d}
-*{box-sizing:border-box}
-body{margin:0;padding:20px;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;max-width:1100px;margin:auto}
-h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:0 0 10px;color:#b9a6ff}
-section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin:16px 0}
-label{display:block;margin:10px 0 3px;color:var(--mut);font-size:13px}
-input[type=text],input[type=password],input[type=number],select{width:100%;padding:8px;background:#0e0e10;color:var(--fg);border:1px solid #333;border-radius:4px;font:inherit}
-button{background:#2a2b33;color:var(--fg);border:1px solid #3a3b45;border-radius:4px;padding:7px 14px;font:inherit;cursor:pointer}
-button:hover:not(:disabled){background:#363744}button:disabled{opacity:.45;cursor:not-allowed}
-button.p{background:var(--tw);border-color:var(--tw);font-weight:600}button.d{background:#8a2d3b;border-color:#8a2d3b}
-.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
-.mut{color:var(--mut);font-size:13px}.ok{color:var(--ok)}.err{color:var(--err)}
-.st{display:flex;gap:16px;flex-wrap:wrap}.st span{display:flex;align-items:center;gap:6px}
-.dot{width:10px;height:10px;border-radius:50%;background:#666;display:inline-block}.dot.ok{background:var(--ok)}.dot.bad{background:var(--err)}
-details{margin-top:10px}summary{cursor:pointer;color:#b9a6ff}
-ol{padding-left:20px}code{background:#0e0e10;padding:1px 5px;border-radius:3px;word-break:break-all}
-.url{display:flex;gap:8px;align-items:center;margin:4px 0}.url code{flex:1;padding:6px 8px}
-.link{margin-bottom:14px}
-#barra{position:sticky;bottom:0;background:var(--bg);padding:12px 0;display:flex;gap:12px;align-items:center}
-#msg{font-weight:600}
-a{color:#b9a6ff}
+.app{display:flex;min-height:100vh}
+nav{width:250px;flex:none;background:var(--side);border-right:1px solid #262631;padding:20px 14px;display:flex;flex-direction:column;gap:3px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 18px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--acc);display:grid;place-items:center;flex:none}
+.brand b{font-size:16px;display:block}.brand small{color:#9d9db0}
+.grp{font-size:11px;font-weight:600;letter-spacing:.06em;color:#8a8a9c;padding:14px 12px 6px}
+.it{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border-radius:8px;color:#d4d4de;cursor:pointer;border:0;background:none;font:inherit;text-align:left;width:100%;white-space:nowrap}
+.it:hover{background:#1f1f2a}.it.on{background:#2a2140;color:#fff;font-weight:600}
+.sq{width:10px;height:10px;border-radius:3px;flex:none}.it .nm{flex:1}
+main{flex:1;min-width:0;padding:32px 40px 110px;max-width:1060px}
+.view{display:none}.view.on{display:block}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px;margin-bottom:22px}
+.pcard{border-top:3px solid}.pcard b{font-size:15px}
+.row2{display:flex;flex-wrap:wrap;gap:20px}.row2>.card{flex:1 1 340px}
+.chk{width:22px;height:22px;border-radius:50%;border:2px solid #5a5a6c;flex:none}
+.chk.done{background:#3ddc84;border:0}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-bottom:22px}
+.opt{position:relative}.opt.rec{border:2px solid var(--acc)}
+.tag{position:absolute;top:-11px;left:16px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+.code{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px;border-radius:10px;background:#120f1c;border:1px dashed #5b3fa0}
+.code b{font:700 28px Consolas,monospace;letter-spacing:.12em}
+.warn{background:#2a1717;border:1px solid #5a2a2a;border-radius:10px;padding:14px}
+.aviso{border:1px solid #f0b45a;background:rgba(240,180,90,.08);border-radius:10px;padding:10px 14px;margin-bottom:18px;color:var(--wait)}
+.save{position:fixed;left:250px;right:0;bottom:0;background:#1b1530;border-top:1px solid #4a3480;padding:14px 40px;display:flex;align-items:center;gap:12px;z-index:5}
+.save[hidden]{display:none}.save span{flex:1}
+#toast{position:fixed;right:20px;bottom:20px;background:#173a29;color:var(--ok);padding:10px 16px;border-radius:10px;font-weight:600;z-index:6;max-width:min(520px,90vw)}
+#toast.bad{background:var(--bad-bg);color:var(--bad)}#toast[hidden]{display:none}
+.flex{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.flex>select{flex:1;min-width:240px}
+.fld{display:flex;flex-direction:column}
+/* aparencia */
 #ap{display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1fr);gap:20px;align-items:start}
-@media(max-width:900px){#ap{grid-template-columns:1fr}}
-.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button.on{background:var(--tw);border-color:var(--tw);font-weight:600}
+.tabs{display:flex;gap:8px}.tabs .btn.on{background:var(--acc);border-color:var(--acc);color:#fff}
 #apform{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}#apform .f{min-width:0}
-#apform .f label{margin:8px 0 3px}#apform .f.chk{display:flex;align-items:center;gap:6px;padding-top:22px}
-#apform .f.chk label{margin:0}#apform .f.chk input{width:auto}
-#apform input[type=color]{width:100%;height:34px;padding:2px;background:#0e0e10;border:1px solid #333;border-radius:4px}
-#apform input[type=range]{width:100%}
+#apform .f label{margin:8px 0 4px;font-size:13px}#apform .f.chk{display:flex;align-items:center;gap:8px;padding-top:22px}
+#apform .f.chk label{margin:0;flex:1}#apform .f.chk input{width:18px;height:18px;flex:none}
+#apform input[type=color]{width:100%;height:38px;padding:2px;background:#101017;border:1px solid #3a3a48;border-radius:8px}
+#apform input[type=range]{width:100%;accent-color:var(--acc)}
 #apprev{position:sticky;top:10px}
-#apmold{border:1px solid var(--line);border-radius:6px;height:460px;overflow:hidden;background:#0e0e10}
+#apmold{border:1px solid var(--line);border-radius:10px;height:460px;overflow:hidden;background:#0e0e10}
 #apmold.xadrez{background:repeating-conic-gradient(#8a8a8a 0 25%,#c8c8c8 0 50%) 0 0/20px 20px}
 #apmold iframe{width:100%;height:100%;border:0;display:block;color-scheme:light;background:transparent}
-.card{border:1px solid #3a3a48;border-radius:8px;padding:10px 14px;margin:10px 0}
-.card h3{margin:0 0 6px}ul.ok{list-style:none;padding-left:4px;margin:4px 0;color:#8fd19e}
-.aviso{border:1px solid #f0b45a;background:rgba(240,180,90,.08);border-radius:6px;padding:8px 12px;margin-top:10px;color:#f0b45a}
-.aviso ul{list-style:none;padding-left:4px;margin:4px 0}
-.presets{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.presets{display:flex;gap:6px;flex-wrap:wrap}
+@media(max-width:900px){#ap{grid-template-columns:1fr}}
+@media(max-width:800px){
+ .app{flex-direction:column}
+ nav{width:auto;height:auto;position:static;flex-direction:row;overflow-x:auto;overflow-y:hidden;padding:10px;border-right:0;border-bottom:1px solid #262631;align-items:center}
+ nav .grp{display:none}.brand{padding:0 10px 0 4px}.brand small{display:none}.it{width:auto}
+ main{padding:20px 16px 110px}.save{left:0;padding:12px 16px}#apform{grid-template-columns:1fr}
+}
 </style></head><body>
-<h1>Configurações do LiveHub</h1>
-<div class="mut">Tudo é feito aqui, sem editar arquivos. Preencha o que quiser e clique em <b>Salvar</b> no fim da página.</div>
+<div class="app">
+<nav aria-label="Seções">
+  <div class="brand"><div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div><div><b>LiveHub</b><small id="versao">versão ...</small></div></div>
+  <button type="button" class="it on" data-v="inicio">Início</button>
+  <div class="grp">PLATAFORMAS</div>
+  <button type="button" class="it" data-v="twitch"><span class="sq" style="background:#9146ff"></span><span class="nm">Twitch</span><span class="dot" id="nd_twitch"></span></button>
+  <button type="button" class="it" data-v="kick"><span class="sq" style="background:#53fc18"></span><span class="nm">Kick</span><span class="dot" id="nd_kick"></span></button>
+  <button type="button" class="it" data-v="youtube"><span class="sq" style="background:#ff3347"></span><span class="nm">YouTube</span><span class="dot" id="nd_youtube"></span></button>
+  <button type="button" class="it" data-v="tiktok"><span class="sq" style="background:#25f4ee"></span><span class="nm">TikTok</span><span class="dot" id="nd_tiktok"></span></button>
+  <button type="button" class="it" data-v="streamelements"><span class="sq" style="background:#4f8cff"></span><span class="nm">StreamElements</span><span class="dot" id="nd_streamelements"></span></button>
+  <div class="grp">PERSONALIZAR</div>
+  <button type="button" class="it" data-v="sons">Sons e recompensas</button>
+  <button type="button" class="it" data-v="aparencia">Aparência do chat</button>
+  <button type="button" class="it" data-v="links">Links para o OBS</button>
+  <button type="button" class="it" data-v="avancado">Avançado</button>
+</nav>
 
-<section id="status"><h2>Status</h2>
-  <div class="st" id="st"></div>
-  <div class="row mut">Login da Twitch: <b id="tlogin">...</b></div>
-  <div class="row mut">Follows da Twitch no feed: <b id="st_follow">...</b></div>
-  <div class="row mut">Recompensas: <b id="st_resg">...</b></div>
+<main>
+<!-- INICIO -->
+<section class="view on" id="v-inicio">
+  <h1>Início</h1>
+  <p class="sub">Resumo do que está ligado. Clique numa plataforma para configurar.</p>
+  <div class="aviso" id="tw_expirou_ini" style="display:none">Sua sessão da Twitch expirou. <a href="#twitch">Entrar com a Twitch de novo</a>.</div>
+  <div class="grid" id="pcards"></div>
+  <div class="row2">
+    <div class="card"><h2>Falta configurar</h2><div id="falta" style="display:flex;flex-direction:column;gap:10px"></div></div>
+    <div class="card"><h2>Links rápidos para o OBS</h2>
+      <div class="line"><div class="grow"><b>Chat geral</b><div class="mono" id="qu_dock"></div></div><button type="button" class="btn" onclick="copiar(U.dock,this)">Copiar</button></div>
+      <div class="line"><div class="grow"><b>Feed geral</b><div class="mono" id="qu_eventos"></div></div><button type="button" class="btn" onclick="copiar(U.eventos,this)">Copiar</button></div>
+      <a href="#links">Ver todos os links e como adicionar</a>
+    </div>
+  </div>
 </section>
 
-<section id="twitch"><h2>Twitch</h2>
-  <p class="mut">Escolha como a Twitch entra no LiveHub. O chat da Twitch funciona nas duas opções.</p>
-  <div class="card" id="op1">
-    <h3>Opção 1 — Conectar com a Twitch (recomendado)</h3>
-    <p><b>Feed 100% completo.</b> Ao conectar você ganha:</p>
-    <ul class="ok">
-      <li>&#10003; Follows da Twitch no feed</li>
-      <li>&#10003; Badges da Twitch no chat (sub, mod, VIP)</li>
-      <li>&#10003; Recompensas com som (só para canais Afiliados ou Parceiros da Twitch)</li>
-    </ul>
-    <div class="aviso" id="tw_expirou" style="display:none">Sua sessão da Twitch expirou — clique em <b>Entrar com a Twitch</b> de novo.</div>
-    <div id="tw_entrar">
-      <button type="button" class="p" id="btn_entrar" style="font-size:16px;padding:12px 24px" onclick="entrarTwitch()">Entrar com a Twitch</button>
+<!-- TWITCH -->
+<section class="view" id="v-twitch">
+  <h1>Twitch</h1>
+  <p class="sub">Escolha como conectar. Recomendamos entrar com a Twitch para ter o feed completo.</p>
+  <div class="card" style="margin-bottom:22px">
+    <label for="tw_canal">Canal da Twitch</label>
+    <input type="text" id="tw_canal" placeholder="meucanal, @meucanal ou https://www.twitch.tv/meucanal" autocomplete="off">
+    <span class="mut">Pode colar o nome, @nome ou o link (twitch.tv/nome). Ao entrar com a Twitch, preenchemos sozinho.</span>
+    <span class="mut txok" id="tw_nota" style="display:none"></span>
+    <span class="chip off" id="chip_twitch">...</span>
+  </div>
+  <div class="opts">
+    <div class="card opt rec" id="op1"><span class="tag">RECOMENDADO</span>
+      <h2>Opção 1 — Entrar com a Twitch</h2>
+      <span class="mut">Feed 100% completo.</span>
+      <ul class="list">
+        <li><span class="y" aria-hidden="true">&#10003;</span>Follows da Twitch no feed</li>
+        <li><span class="y" aria-hidden="true">&#10003;</span>Badges no chat (sub, mod, VIP)</li>
+        <li><span class="y" aria-hidden="true">&#10003;</span>Recompensas com som <span class="mut">(só canais Afiliados ou Parceiros)</span></li>
+      </ul>
+      <div class="aviso" id="tw_expirou" style="display:none;margin:0">Sua sessão da Twitch expirou — clique em <b>Entrar com a Twitch</b> de novo.</div>
+      <div id="tw_entrar"><button type="button" class="btn pri big" id="btn_entrar" onclick="entrarTwitch()">Entrar com a Twitch</button></div>
+      <div class="code" id="tw_codigo" style="display:none">
+        <div><div class="mut">Seu código</div><b id="tw_cod"></b></div>
+        <button type="button" class="btn" onclick="copiar($('tw_cod').textContent,this)">Copiar</button>
+        <button type="button" class="btn pri" onclick="abrirAtivar()">Abrir twitch.tv/activate</button>
+        <button type="button" class="btn" onclick="cancelarEntrada()">Cancelar</button>
+        <span class="mut" style="flex-basis:100%">Confirme o código na página da Twitch. Esta tela atualiza sozinha… aguardando.</span>
+      </div>
+      <div class="line" id="tw_ok" style="display:none"><span class="grow txok">&#10003; Conectado como <b id="tw_quem"></b></span>
+        <button type="button" class="btn dan" id="btn_desc" onclick="desconectar()">Desconectar</button></div>
+      <div class="txbad" id="tw_erro" style="display:none"></div>
+      <span class="mut">A Twitch pode pedir para entrar de novo a cada 30 dias.</span>
     </div>
-    <div id="tw_codigo" style="display:none">
-      <div class="mut">Seu código:</div>
-      <div class="row"><code id="tw_cod" style="font-size:30px;letter-spacing:4px;padding:6px 14px"></code>
-        <button type="button" onclick="copiar($('tw_cod').textContent,this)">Copiar</button>
-        <button type="button" class="p" onclick="abrirAtivar()">Abrir twitch.tv/activate</button>
-        <button type="button" onclick="cancelarEntrada()">Cancelar</button></div>
-      <p class="mut">Confirme o código na página da Twitch. Esta tela atualiza sozinha.</p>
+    <div class="card opt" id="op2">
+      <h2>Opção 2 — Só o nome do canal</h2>
+      <span class="mut">Sem login. Basta o campo "Canal da Twitch" acima.</span>
+      <div class="warn">
+        <b>Sem login você perde:</b>
+        <ul class="list" style="margin-top:8px">
+          <li><span class="n" aria-hidden="true">&#10007;</span>Follows da Twitch no feed</li>
+          <li><span class="n" aria-hidden="true">&#10007;</span>Badges no chat</li>
+          <li><span class="n" aria-hidden="true">&#10007;</span>Recompensas com som</li>
+        </ul>
+      </div>
+      <span class="mut"><b style="color:var(--tx)">Continua funcionando:</b> chat da Twitch, subs, resubs, presentes de sub, bits e raids no feed, e todas as outras plataformas.</span>
     </div>
-    <div id="tw_ok" style="display:none"><span class="ok">&#10003; Conectado como <b id="tw_quem"></b></span>
-      <button type="button" class="d" id="btn_desc" onclick="desconectar()">Desconectar</button></div>
-    <div class="err" id="tw_erro" style="display:none"></div>
-    <div class="mut" style="margin-top:8px">A Twitch pode pedir para entrar de novo a cada 30 dias.</div>
-    <div class="mut" id="tw_nota" style="display:none;color:#8fd19e"></div>
-    <details id="tw_avancado"><summary>Avançado: usar meu próprio aplicativo da Twitch</summary>
-      <p class="mut">Só se você preferir. Você cria um aplicativo na Twitch (grátis, leva 2 minutos):</p>
-      <ol>
-        <li>Abra <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a> (sua conta precisa ter a verificação em duas etapas / 2FA ativada).</li>
-        <li>Clique em <b>Registrar seu aplicativo</b>.</li>
-        <li>Nome: qualquer um (ex.: LiveHub).</li>
-        <li>URL de redirecionamento OAuth, exatamente: <code id="redir">http://localhost:3000/auth</code> <button type="button" onclick="copiar('http://localhost:3000/auth',this)">Copiar</button></li>
-        <li>Categoria: <b>Broadcaster Suite</b>. Tipo de cliente: <b>Confidencial</b>.</li>
-        <li>Clique em <b>Criar</b>, depois em <b>Gerenciar</b> no aplicativo criado.</li>
-        <li>Copie o <b>ID do cliente</b> e cole abaixo.</li>
-        <li>Clique em <b>Novo segredo</b>, copie o segredo e cole abaixo.</li>
-      </ol>
-      <label for="tw_id">Client ID</label><input type="text" id="tw_id" autocomplete="off">
-      <label for="tw_sec">Client Secret</label><input type="password" id="tw_sec" autocomplete="off">
-      <div class="row"><button type="button" id="btn_conectar" onclick="conectarAppProprio()">Conectar com meu aplicativo</button>
-        <span class="mut" id="tw_dica"></span></div>
-      <div class="mut">Ao salvar um Client ID e um Secret, o LiveHub passa a usar o seu aplicativo.</div>
+  </div>
+  <details id="tw_avancado"><summary>Avançado: usar meu próprio aplicativo da Twitch</summary>
+    <p class="mut">Só se você preferir. Você cria um aplicativo na Twitch (grátis, leva 2 minutos). Não é necessário para a maioria das pessoas.</p>
+    <ol>
+      <li>Abra <a href="https://dev.twitch.tv/console/apps" target="_blank" rel="noopener">dev.twitch.tv/console/apps</a> (sua conta precisa ter a verificação em duas etapas / 2FA ativada).</li>
+      <li>Clique em <b>Registrar seu aplicativo</b>.</li>
+      <li>Nome: qualquer um (ex.: LiveHub).</li>
+      <li>URL de redirecionamento OAuth, exatamente: <code id="redir">http://localhost:3000/auth</code> <button type="button" class="btn" onclick="copiar('http://localhost:3000/auth',this)">Copiar</button></li>
+      <li>Categoria: <b>Broadcaster Suite</b>. Tipo de cliente: <b>Confidencial</b>.</li>
+      <li>Clique em <b>Criar</b>, depois em <b>Gerenciar</b> no aplicativo criado.</li>
+      <li>Copie o <b>ID do cliente</b> e cole abaixo.</li>
+      <li>Clique em <b>Novo segredo</b>, copie o segredo e cole abaixo.</li>
+    </ol>
+    <div class="fld"><label for="tw_id">Client ID</label><input type="text" id="tw_id" autocomplete="off"></div>
+    <div class="fld"><label for="tw_sec">Client Secret</label><input type="password" id="tw_sec" autocomplete="off"></div>
+    <div class="flex"><button type="button" class="btn" id="btn_conectar" onclick="conectarAppProprio()">Conectar com meu aplicativo</button><span class="mut" id="tw_dica"></span></div>
+    <span class="mut">Ao salvar um Client ID e um Secret, o LiveHub passa a usar o seu aplicativo.</span>
+  </details>
+</section>
+
+<!-- KICK -->
+<section class="view" id="v-kick">
+  <h1>Kick</h1>
+  <p class="sub">Só o nome do canal. Não precisa de login.</p>
+  <div class="card">
+    <label for="kk_canal">Canal do Kick</label>
+    <input type="text" id="kk_canal" autocomplete="off" placeholder="meucanal ou https://kick.com/meucanal">
+    <span class="mut">Pode colar o link (kick.com/nome).</span>
+    <div class="line"><span class="chip off" id="chip_kick">...</span><span class="grow mut">Chat, follows, subs, presentes e kicks no feed</span></div>
+    <details id="kk_det"><summary>Como fazer? / Não conecta?</summary>
+      <p class="mut">Basta o nome do canal: o LiveHub descobre o resto sozinho ao salvar. Se o Kick bloquear essa consulta, os campos de número abaixo aparecem para você preencher à mão.</p>
+      <div id="kk_manual" style="display:none">
+        <p class="txbad">Não consegui descobrir os números do chat do Kick sozinho. Abra <a id="kk_link" href="#" target="_blank" rel="noopener"></a> no navegador e copie: o <code>"id"</code> do começo (channel_id) e o <code>"id"</code> dentro de <code>"chatroom":{"id"...}</code> (chatroom_id).</p>
+        <div class="fld"><label for="kk_chat">chatroom_id</label><input type="number" id="kk_chat" min="1"></div>
+        <div class="fld" style="margin-top:10px"><label for="kk_chan">channel_id</label><input type="number" id="kk_chan" min="1"></div>
+      </div>
     </details>
   </div>
-  <div class="card" id="op2">
-    <h3>Opção 2 — Só o nome/link do canal</h3>
-    <label for="tw_canal">Nome ou link do seu canal</label><input type="text" id="tw_canal" placeholder="meucanal, @meucanal ou https://www.twitch.tv/meucanal" autocomplete="off">
-    <div class="mut">Aceita <code>nome</code>, <code>@nome</code> ou <code>https://www.twitch.tv/nome</code>. É só isso que o chat precisa. Este campo é o mesmo da Opção 1: se você conectar, ele é preenchido com a conta conectada.</div>
-    <div class="aviso"><b>Sem login você perde:</b>
-      <ul>
-        <li>&#10007; Follows da Twitch no feed</li>
-        <li>&#10007; Badges da Twitch no chat</li>
-        <li>&#10007; Recompensas com som</li>
-      </ul>
-      <b>Continua funcionando:</b> chat da Twitch, subs, resubs, presentes de sub, bits e raids no feed, e todas as outras plataformas.
-    </div>
+</section>
+
+<!-- YOUTUBE -->
+<section class="view" id="v-youtube">
+  <h1>YouTube</h1>
+  <p class="sub">Só o @ do canal. O LiveHub conecta sozinho quando você entra ao vivo.</p>
+  <div class="card">
+    <label for="yt_h">@ do canal</label>
+    <input type="text" id="yt_h" autocomplete="off" placeholder="@meucanal ou https://youtube.com/@meucanal">
+    <span class="mut">Pode colar o link (youtube.com/@canal).</span>
+    <div class="line"><span class="chip off" id="chip_youtube">...</span><span class="grow mut">Chat da live no feed</span></div>
+    <details><summary>Como fazer?</summary><p class="mut">Abra o seu canal no YouTube e copie o nome que começa com @ (ou o link da página). A cada poucos segundos o LiveHub verifica se você está ao vivo (o intervalo fica em Avançado).</p></details>
   </div>
 </section>
 
-<section id="kick"><h2>Kick</h2>
-  <label for="kk_canal">Canal (nome ou link kick.com/seucanal)</label><input type="text" id="kk_canal" autocomplete="off">
-  <div id="kk_manual" style="display:none">
-    <p class="err">Não consegui descobrir os números do chat do Kick sozinho. Abra <a id="kk_link" href="#" target="_blank" rel="noopener"></a> no navegador e copie: o <code>"id"</code> do começo (channel_id) e o <code>"id"</code> dentro de <code>"chatroom":{"id"...}</code> (chatroom_id).</p>
-    <label for="kk_chat">chatroom_id</label><input type="number" id="kk_chat" min="1">
-    <label for="kk_chan">channel_id</label><input type="number" id="kk_chan" min="1">
+<!-- TIKTOK -->
+<section class="view" id="v-tiktok">
+  <h1>TikTok</h1>
+  <p class="sub">Só o usuário. O LiveHub conecta sozinho quando você entra ao vivo.</p>
+  <div class="card">
+    <label for="tt_u">Usuário do TikTok</label>
+    <input type="text" id="tt_u" autocomplete="off" placeholder="usuario ou https://tiktok.com/@usuario">
+    <span class="mut">Pode colar o link (tiktok.com/@usuario).</span>
+    <div class="line"><span class="chip off" id="chip_tiktok">...</span><span class="grow mut">Chat, presentes e follows da live</span></div>
+    <details><summary>Como fazer?</summary><p class="mut">Use o nome de usuário do seu perfil (o que vem depois do @). O intervalo de verificação fica em Avançado.</p></details>
   </div>
 </section>
 
-<section id="youtube"><h2>YouTube e TikTok</h2>
-  <label for="yt_h">YouTube: @ do canal (ou link youtube.com/@canal)</label><input type="text" id="yt_h" autocomplete="off">
-  <label for="tt_u">TikTok: usuário (ou link tiktok.com/@usuario)</label><input type="text" id="tt_u" autocomplete="off">
+<!-- STREAMELEMENTS -->
+<section class="view" id="v-streamelements">
+  <h1>StreamElements</h1>
+  <p class="sub">Opcional: mostra as doações no feed.</p>
+  <div class="card">
+    <label for="se_jwt">JWT Token</label>
+    <input type="password" id="se_jwt" autocomplete="new-password">
+    <span class="mut" id="se_estado"></span>
+    <label class="inl"><input type="checkbox" id="se_rem"> Remover o token salvo</label>
+    <div class="line"><span class="chip off" id="chip_streamelements">...</span><span class="grow mut">Doações no feed</span></div>
+    <details><summary>Onde achar o token</summary>
+      <p class="mut">No painel do StreamElements: Minha conta (Account) &rarr; Canais (Channels) &rarr; Mostrar segredos (Show secrets) &rarr; JWT Token.</p></details>
+  </div>
 </section>
 
-<section id="streamelements"><h2>StreamElements (opcional, doações)</h2>
-  <details><summary>Onde achar o token</summary>
-    <p>No painel do StreamElements: Minha conta (Account) &rarr; Canais (Channels) &rarr; Mostrar segredos (Show secrets) &rarr; JWT Token.</p></details>
-  <label for="se_jwt">JWT Token</label><input type="password" id="se_jwt" autocomplete="new-password">
-  <div class="mut" id="se_estado"></div>
-  <label style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="se_rem"> Remover o token salvo</label>
+<!-- SONS -->
+<section class="view" id="v-sons">
+  <h1>Sons e recompensas</h1>
+  <p class="sub">Onde os sons tocam e qual som cada recompensa toca.</p>
+  <div class="card" style="margin-bottom:22px">
+    <label for="au_dev">Saída de som das recompensas</label>
+    <div class="flex"><select id="au_dev"></select><button type="button" class="btn" onclick="testarSom()">Testar som</button></div>
+    <span class="mut" id="au_msg" role="status">Onde os sons das recompensas vão tocar. Ex.: um canal do Wave Link/VoiceMeeter que o OBS captura, ou a saída padrão.</span>
+  </div>
+  <div class="card"><h2>Pasta de sons</h2>
+    <div class="line"><div class="grow mono" id="sons_dir"></div><button type="button" class="btn" onclick="abrirSons()">Abrir pasta de sons</button></div>
+    <span class="mut">Coloque seus arquivos .mp3, .wav, .ogg ou .flac nessa pasta.</span>
+    <div><a href="/recompensas" id="lnk_resg">Ligar cada recompensa a um som &rarr;</a></div>
+  </div>
 </section>
 
-<section id="sons"><h2>Sons</h2>
-  <label for="au_dev">Saída de som das recompensas</label><select id="au_dev"></select>
-  <div class="mut">Onde os sons das recompensas vão tocar. Ex.: um canal do Wave Link/VoiceMeeter que o OBS captura, ou a saída padrão.</div>
-  <div class="row"><button onclick="testarSom()">Testar som</button><span class="mut" id="au_msg"></span></div>
-  <label>Pasta de sons</label>
-  <div class="url"><code id="sons_dir"></code><button onclick="abrirSons()">Abrir pasta de sons</button></div>
-  <p class="mut">Coloque seus arquivos .mp3, .wav, .ogg ou .flac nessa pasta e depois associe cada recompensa a um som em <a href="/recompensas">Recompensas</a>.</p>
-</section>
-
-<section id="obs"><h2>Links para o OBS</h2>
-  <div class="link"><b>Chat geral</b><div class="url"><code id="u_dock"></code><button onclick="copiar(U.dock,this)">Copiar</button></div>
-    <div class="mut">OBS: menu Docks &rarr; Docks de navegador personalizados.</div></div>
-  <div class="link"><b>Feed de eventos</b><div class="url"><code id="u_eventos"></code><button onclick="copiar(U.eventos,this)">Copiar</button></div>
-    <div class="mut">Follows, resgates, doações. Também como dock.</div></div>
-  <div class="link"><b>Chat para overlay</b><div class="url"><code id="u_neutro"></code><button onclick="copiar(U.neutro,this)">Copiar</button></div>
-    <div class="mut">Fonte de navegador. Opções no fim do link: <code>?sumir=SEGUNDOS</code> (some após N segundos; 0 = nunca), <code>max=15</code> (máximo de mensagens), <code>fonte=24</code> (tamanho da letra em px), <code>ignorar=nome1,nome2</code> (esconde esses usuários). Junte com &amp;, ex.: <code>?sumir=30&amp;max=10&amp;fonte=22</code>.</div></div>
-  <div class="link"><b>Painel de recompensas</b><div class="url"><code id="u_recompensas"></code><button onclick="copiar(U.recompensas,this)">Copiar</button></div>
-    <div class="mut">Dock para ligar recompensas a sons.</div></div>
-</section>
-
-<section id="aparencia"><h2>Aparência do chat</h2>
-  <div class="mut">As mudanças aparecem no OBS na hora, sem atualizar a fonte.</div>
-  <div class="tabs" style="margin-top:10px"><button type="button" id="tab_dock" onclick="apAba('dock')">Painel (/dock)</button><button type="button" id="tab_neutro" onclick="apAba('neutro')">Overlay (/neutro)</button></div>
+<!-- APARENCIA -->
+<section class="view" id="v-aparencia">
+  <h1>Aparência do chat</h1>
+  <p class="sub">As mudanças aparecem no OBS na hora, sem atualizar a fonte.</p>
+  <div class="tabs" style="margin-bottom:16px"><button type="button" class="btn" id="tab_dock" onclick="apAba('dock')">Painel (/dock)</button><button type="button" class="btn" id="tab_neutro" onclick="apAba('neutro')">Overlay (/neutro)</button></div>
   <div id="ap">
-    <div>
+    <div class="card">
       <div class="mut">Modelos prontos (preenchem o formulário; depois é só salvar):</div>
       <div class="presets" id="appresets"></div>
       <div id="apform"></div>
-      <div class="row">
-        <button class="p" type="button" onclick="apSalvar()">Salvar aparência</button>
-        <button type="button" id="ap_reset" onclick="apPedirReset(true)">Restaurar padrão</button>
-        <span id="ap_conf" style="display:none"><span class="mut">Voltar tudo ao visual original?</span> <button class="d" type="button" onclick="apReset()">Sim, restaurar</button> <button type="button" onclick="apPedirReset(false)">Cancelar</button></span>
-        <span id="ap_msg" style="font-weight:600"></span>
+      <div class="flex">
+        <button type="button" class="btn pri" onclick="apSalvar()">Salvar aparência</button>
+        <button type="button" class="btn" id="ap_reset" onclick="apPedirReset(true)">Restaurar padrão</button>
+        <span id="ap_conf" style="display:none"><span class="mut">Voltar tudo ao visual original?</span> <button class="btn dan" type="button" onclick="apReset()">Sim, restaurar</button> <button type="button" class="btn" onclick="apPedirReset(false)">Cancelar</button></span>
+        <span id="ap_msg" role="status" style="font-weight:600"></span>
       </div>
     </div>
     <div id="apprev"><div class="mut" style="margin-bottom:6px">Prévia ao vivo (mensagens de exemplo)</div>
@@ -174,25 +254,52 @@ a{color:#b9a6ff}
   </div>
 </section>
 
-<section id="avancado"><details><summary><b>Avançado</b></summary>
-  <label for="a_port">Porta do LiveHub</label><input type="number" id="a_port" min="1024" max="65535">
-  <div class="mut">Mudar a porta só vale depois de reiniciar o LiveHub (e os links do OBS mudam).</div>
-  <label style="display:flex;gap:6px;align-items:center;margin-top:14px"><input type="checkbox" id="sb_on"> Compatibilidade com Streamer.bot</label>
-  <div class="mut">Só é necessária para o overlay do nutty.gg. Se você usa o Streamer.bot de verdade na mesma porta, vai dar conflito: deixe desligada.</div>
-  <label for="sb_port">Porta do Streamer.bot compat</label><input type="number" id="sb_port" min="1024" max="65535">
-  <label for="yt_i">YouTube: checar a cada (segundos, 15 a 600)</label><input type="number" id="yt_i" min="15" max="600">
-  <label for="tt_i">TikTok: checar a cada (segundos, 15 a 600)</label><input type="number" id="tt_i" min="15" max="600">
-</details></section>
+<!-- LINKS -->
+<section class="view" id="v-links">
+  <h1>Links para o OBS</h1>
+  <p class="sub">Copie e cole no OBS. A porta já está certa.</p>
+  <div class="card">
+    <div class="line"><div class="grow"><b>Chat geral</b><div class="mono" id="u_dock"></div><div class="mut">OBS: menu Docks &rarr; Docks de navegador personalizados.</div></div><button type="button" class="btn" onclick="copiar(U.dock,this)">Copiar</button></div>
+    <div class="line"><div class="grow"><b>Feed de eventos</b><div class="mono" id="u_eventos"></div><div class="mut">Follows, resgates, doações. Também como dock.</div></div><button type="button" class="btn" onclick="copiar(U.eventos,this)">Copiar</button></div>
+    <div class="line"><div class="grow"><b>Chat para overlay</b><div class="mono" id="u_neutro"></div><div class="mut">Fonte de navegador.</div></div><button type="button" class="btn" onclick="copiar(U.neutro,this)">Copiar</button></div>
+    <details><summary>Opções do chat para overlay</summary>
+      <p class="mut">Opções no fim do link: <code>?sumir=SEGUNDOS</code> (some após N segundos; 0 = nunca), <code>max=15</code> (máximo de mensagens), <code>fonte=24</code> (tamanho da letra em px), <code>ignorar=nome1,nome2</code> (esconde esses usuários). Junte com &amp;, ex.: <code>?sumir=30&amp;max=10&amp;fonte=22</code>.</p></details>
+    <div class="line"><div class="grow"><b>Painel de recompensas</b><div class="mono" id="u_recompensas"></div><div class="mut">Dock para ligar recompensas a sons.</div></div><button type="button" class="btn" onclick="copiar(U.recompensas,this)">Copiar</button></div>
+  </div>
+</section>
 
-<div id="barra"><button class="p" onclick="salvar()">Salvar</button><span id="msg"></span></div>
+<!-- AVANCADO -->
+<section class="view" id="v-avancado">
+  <h1>Avançado</h1>
+  <p class="sub">Só mexa aqui se souber o que está fazendo.</p>
+  <div class="card">
+    <div class="fld"><label for="a_port">Porta do LiveHub</label><input type="number" id="a_port" min="1024" max="65535">
+      <span class="mut" style="margin-top:6px">Mudar a porta só vale depois de reiniciar o LiveHub (e os links do OBS mudam).</span></div>
+    <label class="inl"><input type="checkbox" id="sb_on"> Compatibilidade com Streamer.bot</label>
+    <span class="mut">Só é necessária para o overlay do nutty.gg. Se você usa o Streamer.bot de verdade na mesma porta, vai dar conflito: deixe desligada.</span>
+    <div class="fld"><label for="sb_port">Porta do Streamer.bot compat</label><input type="number" id="sb_port" min="1024" max="65535"></div>
+    <div class="fld"><label for="yt_i">YouTube: checar a cada (segundos, 15 a 600)</label><input type="number" id="yt_i" min="15" max="600"></div>
+    <div class="fld"><label for="tt_i">TikTok: checar a cada (segundos, 15 a 600)</label><input type="number" id="tt_i" min="15" max="600"></div>
+  </div>
+</section>
+</main>
+</div>
+
+<div class="save" id="barra" hidden><span id="msg" role="status">Você tem alterações não salvas.</span><button type="button" class="btn" id="btn_desc_alt" onclick="descartar()">Descartar</button><button type="button" class="btn pri" id="btn_salvar" onclick="salvar()">Salvar</button></div>
+<div id="toast" role="status" hidden></div>
 
 <script>
 const $ = id => document.getElementById(id);
-let U = {}, ST = null;
-let autoCanal = false;
-const NOMES = {twitch:'Twitch', kick:'Kick', youtube:'YouTube', tiktok:'TikTok', streamelements:'StreamElements'};
+let U = {}, ST = null, autoCanal = false, base = '';
+const SV = ['tw_canal','tw_id','tw_sec','kk_canal','kk_chat','kk_chan','yt_h','tt_u','yt_i','tt_i','se_jwt','se_rem','au_dev','a_port','sb_on','sb_port'];
+const VIEWS = ['inicio','twitch','kick','youtube','tiktok','streamelements','sons','aparencia','links','avancado'];
+const ALIAS = {obs:'links', status:'inicio', resgates:'sons', ap:'aparencia'};
+const PLAT = [['twitch','Twitch','#9146ff'],['kick','Kick','#53fc18'],['youtube','YouTube','#ff3347'],['tiktok','TikTok','#25f4ee'],['streamelements','StreamElements','#4f8cff']];
 
-function msg(t, ok) { const m = $('msg'); m.textContent = t; m.className = ok ? 'ok' : 'err'; }
+function toast(t, ok = true, ms = 3500) {
+  const e = $('toast'); e.textContent = t; e.className = ok ? '' : 'bad'; e.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => e.hidden = true, ms);
+}
 async function api(url, corpo) {
   const r = await fetch(url, corpo === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(corpo)});
   const j = await r.json().catch(() => ({}));
@@ -200,40 +307,119 @@ async function api(url, corpo) {
 }
 function copiar(t, b) {
   const fim = () => { const o = b.textContent; b.textContent = 'Copiado!'; setTimeout(() => b.textContent = o, 1200); };
-  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(fim);
-  else { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); document.execCommand('copy'); a.remove(); fim(); }
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(fim, fim);
+  else { const a = document.createElement('textarea'); a.value = t; document.body.appendChild(a); a.select(); try { document.execCommand('copy'); } catch (e) {} a.remove(); fim(); }
+}
+
+/* ---- navegacao por hash ---- */
+function viewDoHash() {
+  let h = (location.hash || '').replace('#', '').toLowerCase();
+  h = ALIAS[h] || h;
+  return VIEWS.includes(h) ? h : 'inicio';
+}
+function mostrar(v) {
+  document.querySelectorAll('.view').forEach(e => e.classList.toggle('on', e.id === 'v-' + v));
+  document.querySelectorAll('.it').forEach(b => { const on = b.dataset.v === v; b.classList.toggle('on', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  if (v === 'aparencia') apPrevia();
+  window.scrollTo(0, 0);
+}
+function ir(v) { if (location.hash === '#' + v) mostrar(v); else location.hash = '#' + v; }
+document.querySelectorAll('.it').forEach(b => b.addEventListener('click', () => ir(b.dataset.v)));
+window.addEventListener('hashchange', () => mostrar(viewDoHash()));
+
+/* ---- status ---- */
+function classificar(v) {
+  v = v || '';
+  if (/^conectado/i.test(v)) return ['ok', 'Conectado'];
+  if (/inválido|invalido|erro|falha/i.test(v)) return ['bad', /inv/i.test(v) ? 'Token inválido' : 'Erro, tentando de novo'];
+  if (/reconect/i.test(v)) return ['wait', 'Reconectando'];
+  if (/aguardando|fora do ar|encerrada|ao vivo/i.test(v)) return ['wait', 'Aguardando a live'];
+  return ['off', 'Desligado'];
+}
+function textoPlat(k, s, cls) {
+  const c = s.config, t = s.twitch;
+  if (k === 'twitch') return t.connected ? 'Feed completo · ' + (t.login || c.twitch.channel) : (c.twitch.channel ? 'Só chat · ' + c.twitch.channel : 'Coloque o canal');
+  if (k === 'kick') return c.kick.channel ? 'Chat e eventos · ' + c.kick.channel : 'Coloque o canal';
+  if (k === 'youtube') return c.youtube.handle ? (cls === 'wait' ? 'Conecta quando você entrar ao vivo' : 'Chat da live') : 'Coloque o @ do canal';
+  if (k === 'tiktok') return c.tiktok.username ? (cls === 'wait' ? 'Conecta quando você entrar ao vivo' : 'Chat da live') : 'Coloque o usuário';
+  return s.streamelements.has_jwt ? 'Doações no feed' : 'Opcional: doações no feed';
 }
 function pintarStatus(s) {
-  $('st').innerHTML = '';
-  for (const [k, n] of Object.entries(NOMES)) {
-    const v = (s.status || {})[k] || '—', bom = /conectad|ok|ativo/i.test(v) && !/des/i.test(v);
-    const e = document.createElement('span');
-    e.innerHTML = '<i class="dot ' + (bom ? 'ok' : (/erro|falha/i.test(v) ? 'bad' : '')) + '"></i>';
-    e.append(n + ': ' + v);
-    $('st').appendChild(e);
+  const t = s.twitch, c = s.config;
+  $('versao').textContent = 'versão ' + (s.version || '');
+  const box = $('pcards'); box.innerHTML = '';
+  for (const [k, nome, cor] of PLAT) {
+    const [cls, rot] = classificar((s.status || {})[k]);
+    $('nd_' + k).className = 'dot ' + cls; $('nd_' + k).title = rot;
+    const ch = $('chip_' + k); ch.className = 'chip ' + cls; ch.textContent = rot;
+    const d = document.createElement('a'); d.className = 'card pcard'; d.href = '#' + k; d.style.borderTopColor = cor; d.style.color = 'inherit'; d.style.fontWeight = 'normal'; d.style.textDecoration = 'none';
+    const b = document.createElement('b'); b.textContent = nome;
+    const sp = document.createElement('span'); sp.className = 'chip ' + cls; sp.textContent = rot;
+    const m = document.createElement('span'); m.className = 'mut'; m.textContent = textoPlat(k, s, cls);
+    d.append(b, sp, m); box.appendChild(d);
   }
-  const t = s.twitch;
-  $('tlogin').textContent = t.connected ? (t.login || 'conectado') : 'não conectado (opcional)';
-  const as = t.assinaturas || {};
-  $('st_follow').textContent = as.follow === 'ativo' ? 'ativo' : 'inativo (conecte a Twitch)';
-  $('st_resg').textContent = as.resgates === 'ativo' ? 'ativas'
-    : as.resgates === 'indisponivel_afiliado' ? 'indisponíveis (canal não é Afiliado/Parceiro)' : 'inativas (conecte a Twitch)';
   if (t.connected && t.login && !autoCanal) {
     autoCanal = true;
     const atual = ($('tw_canal').value || '').trim().toLowerCase();
     if (atual !== t.login.toLowerCase()) {
-      $('tw_canal').value = t.login;
+      $('tw_canal').value = t.login; base = JSON.parse(base || '{}'); base.tw_canal = t.login; base = JSON.stringify(base); sujo();
       api('/api/config', {twitch:{channel:t.login}});
       $('tw_nota').textContent = 'O canal foi preenchido com a conta conectada (' + t.login + '), porque follows e recompensas são sempre da conta que fez o login.';
       $('tw_nota').style.display = '';
     }
   }
-  $('tw_expirou').style.display = t.login_expirado ? '' : 'none';
+  $('tw_expirou').style.display = $('tw_expirou_ini').style.display = t.login_expirado ? '' : 'none';
   $('btn_conectar').disabled = !(t.client_id && t.has_secret);
   $('tw_avancado').open = $('tw_avancado').open || t.modo === 'app_proprio';
   if (!dispTimer) mostrarTwitch(t.connected ? 'conectado' : 'inativo', t.login);
   $('tw_dica').textContent = (t.client_id && t.has_secret) ? '' : 'Salve o Client ID e o Client Secret primeiro.';
+  if (t.connected) { const ch = $('chip_twitch'); ch.className = 'chip ok'; ch.textContent = 'Conectado como ' + (t.login || ''); }
+  pintarFalta(s);
 }
+function tipObsDispensado() { try { return localStorage.getItem('lh_obs_ok') === '1'; } catch (e) { return false; } }
+function pintarFalta(s) {
+  const c = s.config, as = s.twitch.assinaturas || {}, itens = [];
+  const canais = !!(c.twitch.channel || c.kick.channel || c.youtube.handle || c.tiktok.username);
+  itens.push({t: 'Colocar os canais', feito: canais, v: 'twitch', l: 'Configurar'});
+  if (!s.twitch.connected) itens.push({t: 'Recomendado: entrar com a Twitch (follows, badges e recompensas)', v: 'twitch', l: 'Entrar'});
+  if (as.resgates === 'ativo' && !c.audio.output_device) itens.push({t: 'Escolher a saída de som das recompensas', v: 'sons', l: 'Configurar'});
+  if (!tipObsDispensado()) itens.push({t: 'Adicionar o chat e o feed no OBS', v: 'links', l: 'Ver links', dispensar: true});
+  const f = $('falta'); f.innerHTML = '';
+  for (const i of itens) {
+    const d = document.createElement('div'); d.className = 'line'; if (i.feito) d.style.color = '#8e8ea2';
+    const ck = document.createElement('span'); ck.className = 'chk' + (i.feito ? ' done' : '');
+    const tx = document.createElement('span'); tx.className = 'grow'; tx.textContent = i.t; if (i.feito) tx.style.textDecoration = 'line-through';
+    d.append(ck, tx);
+    if (!i.feito) {
+      const a = document.createElement('a'); a.href = '#' + i.v; a.textContent = i.l; d.appendChild(a);
+    }
+    if (i.dispensar) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = 'Dispensar';
+      b.onclick = () => { try { localStorage.setItem('lh_obs_ok', '1'); } catch (e) {} pintarFalta(ST); };
+      d.appendChild(b);
+    }
+    f.appendChild(d);
+  }
+  if (itens.every(i => i.feito)) { const p = document.createElement('div'); p.className = 'mut'; p.textContent = 'Tudo certo por aqui.'; f.appendChild(p); }
+}
+
+/* ---- formulario + barra de salvar ---- */
+function valoresForm() {
+  const v = {};
+  for (const id of SV) { const e = $(id); v[id] = e.type === 'checkbox' ? e.checked : e.value; }
+  return JSON.stringify(v);
+}
+function sujo() {
+  const s = valoresForm() !== base;
+  $('barra').hidden = !s;
+  if (s && $('msg').dataset.erro !== '1') $('msg').textContent = 'Você tem alterações não salvas.';
+  return s;
+}
+function marcarLimpo() { base = valoresForm(); $('msg').dataset.erro = ''; $('barra').hidden = true; }
+document.addEventListener('input', e => { if (SV.includes(e.target.id)) { $('msg').dataset.erro = ''; sujo(); } });
+document.addEventListener('change', e => { if (SV.includes(e.target.id)) { $('msg').dataset.erro = ''; sujo(); } });
+window.addEventListener('beforeunload', e => { if (!$('barra').hidden) { e.preventDefault(); e.returnValue = ''; } });
+
 function preencher(s) {
   const c = s.config;
   $('tw_canal').value = c.twitch.channel; $('tw_id').value = s.twitch.client_id;
@@ -248,13 +434,15 @@ function preencher(s) {
   for (const n of ['', ...s.audio.saidas]) { const o = document.createElement('option'); o.value = n; o.textContent = n || 'Padrão do sistema'; sel.appendChild(o); }
   sel.value = s.audio.atual; if (sel.value !== s.audio.atual) sel.value = '';
   $('sons_dir').textContent = s.sons_dir;
-  U = s.urls; for (const k of Object.keys(U)) $('u_' + k).textContent = U[k];
+  U = s.urls; for (const k of Object.keys(U)) { $('u_' + k).textContent = U[k]; if ($('qu_' + k)) $('qu_' + k).textContent = U[k]; }
   $('kk_manual').style.display = 'none';
+  marcarLimpo();
 }
 async function atualizarStatus() {
   const r = await api('/api/config'); if (r.ok) { ST = r.j; pintarStatus(r.j); }
 }
 async function carregar() { const r = await api('/api/config'); if (r.ok) { ST = r.j; preencher(r.j); pintarStatus(r.j); } }
+async function descartar() { await carregar(); }
 async function salvar() {
   const num = id => $(id).value === '' ? null : +$(id).value;
   const corpo = {
@@ -266,18 +454,24 @@ async function salvar() {
     web_port:num('a_port'), audio:{output_device:$('au_dev').value}
   };
   if ($('kk_manual').style.display !== 'none') { corpo.kick.chatroom_id = num('kk_chat'); corpo.kick.channel_id = num('kk_chan'); }
-  msg('Salvando...', true);
+  $('msg').dataset.erro = '1'; $('msg').textContent = 'Salvando...';
   const r = await api('/api/config', corpo);
-  if (!r.ok) { msg((r.j.campo ? '[' + r.j.campo + '] ' : '') + (r.j.erro || 'Erro ao salvar.'), false); return; }
-  preencher(r.j); pintarStatus(r.j);
+  if (!r.ok) {
+    $('msg').dataset.erro = '1'; $('msg').textContent = (r.j.campo ? '[' + r.j.campo + '] ' : '') + (r.j.erro || 'Erro ao salvar.'); $('barra').hidden = false;
+    return false;
+  }
+  ST = r.j; preencher(r.j); pintarStatus(r.j);
   let t = 'Salvo!', ok = true;
   if (r.j.restart_required) t += ' Reinicie o LiveHub para a nova porta valer.';
   if (r.j.kick && r.j.kick.precisa_manual) {
-    $('kk_manual').style.display = ''; const l = 'https://kick.com/api/v2/channels/' + r.j.config.kick.channel;
-    $('kk_link').href = l; $('kk_link').textContent = l; t += ' Falta preencher os números do Kick (veja acima).'; ok = false;
+    $('kk_manual').style.display = ''; $('kk_det').open = true; const l = 'https://kick.com/api/v2/channels/' + r.j.config.kick.channel;
+    $('kk_link').href = l; $('kk_link').textContent = l; t += ' Falta preencher os números do Kick.'; ok = false; ir('kick'); marcarLimpo();
   }
-  msg(t, ok);
+  toast(t, ok, 6000);
+  return true;
 }
+
+/* ---- Twitch ---- */
 async function desconectar() { await api('/api/logout', {}); atualizarStatus(); }
 let dispTimer = null, dispUri = '';
 function mostrarTwitch(est, login) {
@@ -290,6 +484,7 @@ function mostrarTwitch(est, login) {
              erro:'Não deu certo. Clique em Entrar com a Twitch para tentar de novo.'}[est];
   $('tw_erro').textContent = m || ''; $('tw_erro').style.display = m ? '' : 'none';
   $('btn_entrar').textContent = m ? 'Tentar de novo' : 'Entrar com a Twitch';
+  if (est !== 'conectado' && est !== 'aguardando' && ST && !ST.twitch.connected) { const ch = $('chip_twitch'); const [cls, rot] = classificar((ST.status || {}).twitch); ch.className = 'chip ' + cls; ch.textContent = rot; }
 }
 function pararDisp() { clearInterval(dispTimer); dispTimer = null; }
 async function entrarTwitch() {
@@ -308,11 +503,13 @@ async function consultarDisp() {
 }
 async function cancelarEntrada() { pararDisp(); await api('/api/twitch/dispositivo/cancelar', {}); mostrarTwitch('inativo'); }
 async function conectarAppProprio() {
-  await salvar();
+  if (!await salvar()) return;
   const r = await api('/api/twitch/modo', {modo:'app_proprio'});
   if (!r.ok) { $('tw_dica').textContent = r.j.erro || 'Erro.'; return; }
   location = '/login';
 }
+
+/* ---- sons ---- */
 async function testarSom() {
   $('au_msg').textContent = 'Tocando...';
   const r = await api('/api/audio/testar', {device:$('au_dev').value});
@@ -342,7 +539,7 @@ const AP_PRESETS = {
   'Transparente (overlay)': {opacidade_fundo:0, cor_fundo_fim:'', cor_msg_fundo:'#000000', opacidade_msg:55, cor_texto:'#ffffff', contorno:'sombra', cor_contorno:'#000000', raio:6},
   'Alto contraste': {cor_fundo:'#000000', cor_fundo_fim:'', opacidade_fundo:100, cor_msg_fundo:'#000000', opacidade_msg:100, cor_texto:'#ffffff', cor_destaque:'#333300', cor_nome_modo:'fixa', cor_nome_fixa:'#ffee00', contorno:'contorno', cor_contorno:'#000000', negrito:true},
 };
-let AP = null, apAlvo = 'dock', apRascunho = {}, apTimer = null;
+let AP = null, apAlvo = 'dock', apRascunho = {}, apTimer = null, apPronto = false;
 
 function apCampo([k, rot, tipo, a, b]) {
   const id = 'ap_' + k, d = document.createElement('div'); d.className = 'f' + (tipo === 'bool' ? ' chk' : '');
@@ -352,8 +549,8 @@ function apCampo([k, rot, tipo, a, b]) {
   else if (tipo === 'pct') d.innerHTML = l(rot + ': <b id="' + id + '_v"></b>') + '<input type="range" id="' + id + '" min="0" max="100" step="1">';
   else if (tipo === 'num') d.innerHTML = l(rot) + '<input type="number" id="' + id + '" min="' + a + '" max="' + b + '">';
   else if (tipo === 'sel') d.innerHTML = l(rot) + '<select id="' + id + '">' + a.map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('') + '</select>';
-  else if (tipo === 'degrade') d.innerHTML = l('Degradê no fundo (cor final)') + '<div style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="' + id + '_on" title="Ligar degradê"><input type="color" id="' + id + '"></div>';
-  else if (tipo === 'fonte') d.innerHTML = l(rot) + '<select id="' + id + '"></select><input type="text" id="' + id + '_txt" placeholder="nome de outra fonte instalada" maxlength="60" style="display:none;margin-top:6px">';
+  else if (tipo === 'degrade') d.innerHTML = l('Degradê no fundo (cor final)') + '<div style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="' + id + '_on" title="Ligar degradê" aria-label="Ligar degradê"><input type="color" id="' + id + '"></div>';
+  else if (tipo === 'fonte') d.innerHTML = l(rot) + '<select id="' + id + '"></select><input type="text" id="' + id + '_txt" placeholder="nome de outra fonte instalada" maxlength="60" aria-label="Nome da fonte" style="display:none;margin-top:6px">';
   d.addEventListener('input', apMudou); d.addEventListener('change', apMudou);
   return d;
 }
@@ -364,7 +561,7 @@ function apMontar() {
   for (const n of AP.fontes_sugeridas) sel.add(new Option(n, n));
   sel.add(new Option('Padrão do sistema', 'system-ui')); sel.add(new Option('Outra fonte instalada...', '__outra'));
   const pr = $('appresets');
-  for (const n of Object.keys(AP_PRESETS)) { const b = document.createElement('button'); b.type = 'button'; b.textContent = n; b.onclick = () => { apPreencher({...apLer(), ...AP_PRESETS[n]}); apMudou(); }; pr.appendChild(b); }
+  for (const n of Object.keys(AP_PRESETS)) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = n; b.onclick = () => { apPreencher({...apLer(), ...AP_PRESETS[n]}); apMudou(); }; pr.appendChild(b); }
   $('apframe').onload = apPrevia;
 }
 function apPreencher(v) {
@@ -401,19 +598,21 @@ function apMudou() {
   clearTimeout(apTimer); apTimer = setTimeout(apPrevia, 100);
 }
 function apPrevia() {
+  if (!AP || !$('ap_fonte')) return;
   const w = $('apframe').contentWindow; if (w) w.postMessage({tipo: 'preview', valores: apLer()}, location.origin);
 }
 function apAba(a) {
-  if (AP && apAlvo) apRascunho[apAlvo] = apLer();
+  if (AP && apPronto) apRascunho[apAlvo] = apLer();
   apAlvo = a;
-  $('tab_dock').className = a === 'dock' ? 'on' : ''; $('tab_neutro').className = a === 'neutro' ? 'on' : '';
+  $('tab_dock').classList.toggle('on', a === 'dock'); $('tab_neutro').classList.toggle('on', a === 'neutro');
+  $('tab_dock').setAttribute('aria-pressed', a === 'dock'); $('tab_neutro').setAttribute('aria-pressed', a === 'neutro');
   $('apmold').className = a === 'neutro' ? 'xadrez' : '';
   if (!AP) return;
-  apPreencher(apRascunho[a] || AP[a]);
+  apPreencher(apRascunho[a] || AP[a]); apPronto = true;
   const fr = $('apframe'); fr.src = '/' + a + '?demo=1';
   apPedirReset(false); $('ap_msg').textContent = '';
 }
-function apMsg(t, ok) { const m = $('ap_msg'); m.textContent = t; m.className = ok ? 'ok' : 'err'; }
+function apMsg(t, ok) { const m = $('ap_msg'); m.textContent = t; m.className = ok ? 'txok' : 'txbad'; }
 async function apSalvar() {
   apMsg('Salvando...', true);
   const r = await api('/api/aparencia', {alvo: apAlvo, valores: apLer()});
@@ -431,7 +630,7 @@ async function apIniciar() {
   const r = await api('/api/aparencia'); if (!r.ok) return;
   AP = r.j; apMontar(); apAba('dock');
 }
+mostrar(viewDoHash());
 apIniciar();
 carregar(); setInterval(atualizarStatus, 5000);
-if (location.hash) setTimeout(() => { const e = document.querySelector(location.hash); if (e) e.scrollIntoView(); }, 300);
 </script></body></html>

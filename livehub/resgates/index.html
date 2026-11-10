@@ -1,38 +1,39 @@
 <!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><title>Resgates da Twitch - LiveHub</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="/tema.css">
 <style>
-:root{color-scheme:dark}
-body{background:#121316;color:#e6e6ea;font:15px system-ui,sans-serif;margin:0;padding:20px;max-width:980px;margin:auto}
-h1{font-size:20px}h2{font-size:16px;margin-top:28px;color:#b9a6ff}
-.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#1c1d22;padding:12px 14px;border-radius:8px}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;background:#c44}
-.dot.ok{background:#3c6}
-button,select,input{background:#2a2b33;color:#e6e6ea;border:1px solid #3a3b45;border-radius:6px;padding:6px 10px;font:inherit}
-button{cursor:pointer}button:hover{background:#363744}
-button.p{background:#6441a5;border-color:#6441a5}button.d{background:#8a2d3b;border-color:#8a2d3b}
-.rw{display:grid;grid-template-columns:1.3fr 2fr 70px auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #26272e}
-.rw small{color:#8d8e99}select{min-width:0;width:100%}input[type=number]{width:70px}
-table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:5px 8px;border-bottom:1px solid #26272e}th{color:#8d8e99;font-weight:500}
-.msg{color:#8d8e99;font-size:13px}
-</style></head><body>
-<h1>Resgates da Twitch &rarr; sons</h1>
+main{max-width:980px;margin:auto;padding:28px 20px 60px}
+header.top{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+header.top h1{flex:1;margin:0}
+.back{min-height:38px;display:inline-flex;align-items:center}
+.bar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:var(--card);border:1px solid var(--line);padding:12px 14px;border-radius:12px;margin-bottom:12px}
+.bar select{width:auto;max-width:320px}
+h2{margin:26px 0 12px}
+.rw{display:grid;grid-template-columns:1.3fr 2fr 90px auto auto;gap:8px;align-items:center;padding:10px 12px;border-radius:8px;background:var(--card2);margin-bottom:8px}
+.rw small{color:var(--mut)}
+table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}th{color:var(--mut);font-weight:600}
+.msg{color:var(--mut);font-size:13px}.msg a{font-weight:600}
+.av{color:var(--wait);display:none;margin-top:8px;font-size:13px}
+@media(max-width:700px){.rw{grid-template-columns:1fr 1fr}}
+</style></head><body><main>
+<header class="top"><a class="back" href="/config">&larr; Configurações</a><h1>Resgates da Twitch &rarr; sons</h1></header>
 <div class="bar">
-  <span><span id="d1" class="dot"></span><span id="t1">...</span></span>
-  <span><span id="d2" class="dot"></span><span id="t2">...</span></span>
-  <button class="p" id="login" onclick="location='/login'">Entrar com a Twitch</button>
+  <span><span id="d1" class="dot bad"></span> <span id="t1">...</span></span>
+  <span><span id="d2" class="dot bad"></span> <span id="t2">...</span></span>
+  <button type="button" class="btn pri" id="login" onclick="location='/login'">Entrar com a Twitch</button>
   <span style="flex:1"></span>
   <span id="pl" class="msg"></span>
-  <button class="d" onclick="parar()">Parar som e limpar fila</button>
+  <button type="button" class="btn dan" onclick="parar()">Parar som e limpar fila</button>
 </div>
-<div id="semapp" class="msg" style="display:none;color:#f0b45a;margin-top:8px">Para ter follows da Twitch no feed, badges no chat e, se o canal for Afiliado ou Parceiro, recompensas com som, <a href="/config#twitch" style="color:#b9a6ff">entre com a Twitch</a> em Configurações. O chat e o feed (subs, bits, raids) funcionam normalmente sem login.</div>
-<div id="expirou" class="msg" style="display:none;color:#f0b45a;margin-top:8px">Sua sessão da Twitch expirou — clique em <a href="/config#twitch" style="color:#b9a6ff">Entrar com a Twitch</a> de novo.</div>
-<div class="bar" style="margin-top:8px"><label for="saida">Saída de som das recompensas</label>
-  <select id="saida" onchange="salvarSaida()" style="width:auto;max-width:320px"></select>
-  <button onclick="testarSaida()">Testar</button><span id="saida_msg" class="msg"></span></div>
+<div id="semapp" class="av">Para ter follows da Twitch no feed, badges no chat e, se o canal for Afiliado ou Parceiro, recompensas com som, <a href="/config#twitch">entre com a Twitch</a> em Configurações. O chat e o feed (subs, bits, raids) funcionam normalmente sem login.</div>
+<div id="expirou" class="av">Sua sessão da Twitch expirou — clique em <a href="/config#twitch">Entrar com a Twitch</a> de novo.</div>
+<div class="bar" style="margin-top:12px"><label for="saida" style="margin:0">Saída de som das recompensas</label>
+  <select id="saida" onchange="salvarSaida()"></select>
+  <button type="button" class="btn" onclick="testarSaida()">Testar</button><span id="saida_msg" class="msg" role="status"></span></div>
 <div id="err" class="msg"></div>
-<div id="aviso2" class="msg" style="color:#f0b45a;display:none;margin-top:8px">Falta a permissão de seguidores: entre de novo com a Twitch (clique em "Entrar de novo") para os follows aparecerem no feed.</div>
-<div id="aviso" class="msg" style="color:#f0b45a;display:none;margin-top:8px">É preciso entrar com a Twitch de novo para gerenciar recompensas (clique em "Entrar de novo").</div>
+<div id="aviso2" class="av">Falta a permissão de seguidores: entre de novo com a Twitch (clique em "Entrar de novo") para os follows aparecerem no feed.</div>
+<div id="aviso" class="av">É preciso entrar com a Twitch de novo para gerenciar recompensas (clique em "Entrar de novo").</div>
 <h2>Recompensas</h2><div id="rws" class="msg">Conecte a Twitch para listar as recompensas.</div>
 <h2>Últimos resgates</h2>
 <table><thead><tr><th>Hora</th><th>Recompensa</th><th>Quem</th><th>Resultado</th></tr></thead><tbody id="rs"></tbody></table>
@@ -43,8 +44,8 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const post=(u,b)=>fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b||{})}).then(r=>r.json());
 async function status(){
   const s=await (await fetch('/api/status')).json();
-  $('d1').className='dot'+(s.logado?' ok':'');$('t1').textContent=s.logado?('Logado'+(s.canal?' como '+s.canal:'')):(s.configurado?'Não conectado':'Não conectado');
-  $('d2').className='dot'+(s.conectado&&s.inscrito?' ok':'');
+  $('d1').className='dot '+(s.logado?'ok':'bad');$('t1').textContent=s.logado?('Logado'+(s.canal?' como '+s.canal:'')):(s.configurado?'Não conectado':'Não conectado');
+  $('d2').className='dot '+(s.conectado&&s.inscrito?'ok':'bad');
   $('t2').textContent=s.conectado?(s.inscrito?'Conectado (escutando resgates)':'Conectado, sem assinatura'):'Desconectado';
   $('semapp').style.display=s.logado?'none':'block';$('expirou').style.display=s.login_expirado?'block':'none';$('login').style.display=(s.logado&&s.modo==='app_proprio')?'':'none';
   $('login').textContent=s.logado?'Entrar de novo':'Entrar com a Twitch';
@@ -62,9 +63,9 @@ async function recompensas(){
   const opts=m=>'<option value="">(sem som)</option>'+sons.map(s=>`<option ${m&&m.som===s?'selected':''}>${esc(s)}</option>`).join('');
   $('rws').innerHTML=j.map(x=>`<div class="rw" data-id="${x.id}" data-t="${esc(x.titulo)}">
     <div>${esc(x.titulo)}<br><small>${x.custo} pontos${x.ativa?'':' (desativada)'}</small></div>
-    <select>${opts(x.mapa)}</select>
-    <input type="number" min="0" max="100" value="${x.mapa?x.mapa.volume:80}" title="Volume">
-    <button onclick="testar(this)">Testar</button><button class="p" onclick="salvar(this)">Salvar</button></div>`).join('')||'Nenhuma recompensa.';
+    <select aria-label="Som de ${esc(x.titulo)}">${opts(x.mapa)}</select>
+    <input type="number" min="0" max="100" value="${x.mapa?x.mapa.volume:80}" title="Volume" aria-label="Volume de ${esc(x.titulo)}">
+    <button type="button" class="btn" onclick="testar(this)">Testar</button><button type="button" class="btn pri" onclick="salvar(this)">Salvar</button></div>`).join('')||'Nenhuma recompensa.';
 }
 const dados=b=>{const d=b.closest('.rw');return{reward_id:d.dataset.id,titulo:d.dataset.t,som:d.querySelector('select').value,volume:+d.querySelector('input').value}};
 async function testar(b){const d=dados(b);if(!d.som)return;const r=await post('/api/testar',d);if(r.erro)alert(r.erro)}
@@ -83,4 +84,4 @@ async function resgates(){
   $('rs').innerHTML=j.map(x=>`<tr><td>${x.hora}</td><td>${esc(x.titulo)}</td><td>${esc(x.usuario)}</td><td>${x.status}</td></tr>`).join('')||'<tr><td colspan=4 class="msg">Nenhum resgate ainda.</td></tr>';
 }
 saidas();status();resgates();setInterval(status,2000);setInterval(resgates,3000);
-</script></body></html>
+</script></main></body></html>

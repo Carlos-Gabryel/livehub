@@ -3,7 +3,7 @@ import asyncio, copy, logging, os, re, sys
 
 from aiohttp import web
 
-from . import paths, settings
+from . import __version__, paths, settings
 from .chat.kick import Kick
 from .resgates import audio
 from .web import WEB_PORT, seguro
@@ -200,6 +200,7 @@ def estado(rt) -> dict:
         "audio": {"saidas": saidas, "atual": cfg["audio"]["output_device"]},
         "sons_dir": str(paths.sons_dir()),
         "web_port": porta,
+        "version": __version__,
         "urls": urls(porta),
     }
 
@@ -211,6 +212,10 @@ def add_routes(app: web.Application, rt):
     @r.get("/config")
     async def pagina(req):
         return web.FileResponse(paths.resource_dir() / "static" / "config.html")
+
+    @r.get("/tema.css")
+    async def tema(req):
+        return web.FileResponse(paths.resource_dir() / "static" / "tema.css", headers={"Cache-Control": "no-cache"})
 
     @r.get("/api/config")
     async def get_config(req):

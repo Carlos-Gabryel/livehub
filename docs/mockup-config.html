@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LiveHub - mockup da configuração</title>
+<style>
+:root{--bg:#0e0e13;--side:#15151c;--card:#17171f;--card2:#1d1d27;--line:#2a2a36;--tx:#ececf1;--mut:#a6a6b8;--acc:#9146ff;--accl:#c4a8ff;
+--ok-bg:#173a29;--ok:#6ff0a6;--wait-bg:#3d2e14;--wait:#f6c77a;--off-bg:#262631;--off:#b9b9c8;--bad:#ff8a8a}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.45 "Segoe UI",system-ui,sans-serif}
+.app{display:flex;min-height:100vh}
+nav{width:250px;flex:none;background:var(--side);border-right:1px solid #262631;padding:20px 14px;display:flex;flex-direction:column;gap:3px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 10px 18px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--acc);display:grid;place-items:center}
+.brand b{font-size:16px;display:block}.brand small{color:#9d9db0}
+.grp{font-size:11px;font-weight:600;letter-spacing:.06em;color:#8a8a9c;padding:14px 12px 6px}
+.it{display:flex;align-items:center;gap:10px;min-height:40px;padding:0 12px;border-radius:8px;color:#d4d4de;cursor:pointer;border:0;background:none;font:inherit;text-align:left;width:100%}
+.it:hover{background:#1f1f2a}.it.on{background:#2a2140;color:#fff;font-weight:600}
+.sq{width:10px;height:10px;border-radius:3px;flex:none}.it .nm{flex:1}
+.dot{width:8px;height:8px;border-radius:50%}
+main{flex:1;min-width:0;padding:32px 40px 110px;max-width:1060px}
+h1{margin:0 0 4px;font-size:26px}h2{margin:0;font-size:16px}
+.sub{margin:0 0 26px;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:14px;margin-bottom:22px}
+.pcard{border-top:3px solid}.pcard b{font-size:15px}
+.chip{align-self:flex-start;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+.ok{background:var(--ok-bg);color:var(--ok)}.wait{background:var(--wait-bg);color:var(--wait)}.off{background:var(--off-bg);color:var(--off)}
+.mut{color:var(--mut);font-size:12.5px}
+.row2{display:flex;flex-wrap:wrap;gap:20px}.row2>.card{flex:1 1 340px}
+.line{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:8px;background:var(--card2)}
+.line .grow{flex:1;min-width:0}
+.mono{font-family:Consolas,ui-monospace,monospace;font-size:12px;color:var(--mut)}
+.btn{min-height:38px;padding:0 16px;border-radius:8px;border:1px solid #3a3a48;background:#23232e;color:var(--tx);font:inherit;font-weight:600;cursor:pointer}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.big{min-height:46px;font-size:15px;padding:0 22px}
+a{color:var(--accl);font-weight:600;text-decoration:none}
+.chk{width:22px;height:22px;border-radius:50%;border:2px solid #5a5a6c;flex:none}
+.chk.done{background:#3ddc84;border:0}
+label{font-weight:600;display:block;margin-bottom:6px}
+input[type=text]{width:100%;min-height:40px;border-radius:8px;border:1px solid #3a3a48;background:#101017;color:var(--tx);padding:0 12px;font:inherit}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.opt{position:relative}.opt.rec{border:2px solid var(--acc)}
+.tag{position:absolute;top:-11px;left:16px;background:var(--acc);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px}
+.list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.list li{display:flex;gap:8px}.y{color:var(--ok);font-weight:700}.n{color:var(--bad);font-weight:700}
+.code{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px;border-radius:10px;background:#120f1c;border:1px dashed #5b3fa0}
+.code b{font:700 28px Consolas,monospace;letter-spacing:.12em}
+.warn{background:#2a1717;border:1px solid #5a2a2a;border-radius:10px;padding:14px}
+details{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--card)}
+summary{cursor:pointer;font-weight:600}
+.save{position:fixed;left:250px;right:0;bottom:0;background:#1b1530;border-top:1px solid #4a3480;padding:14px 40px;display:flex;align-items:center;gap:12px}
+.save span{flex:1}
+.view{display:none}.view.on{display:block}
+.note{position:fixed;right:16px;top:16px;background:#3d2e14;color:var(--wait);padding:8px 12px;border-radius:8px;font-size:12px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="note">MOCKUP — clique no menu para ver as telas</div>
+<div class="app">
+<nav>
+  <div class="brand"><div class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg></div><div><b>LiveHub</b><small>versão 0.1.4</small></div></div>
+  <button class="it on" data-v="inicio">Início</button>
+  <div class="grp">PLATAFORMAS</div>
+  <button class="it" data-v="twitch"><span class="sq" style="background:#9146ff"></span><span class="nm">Twitch</span><span class="dot" style="background:#3ddc84"></span></button>
+  <button class="it" data-v="kick"><span class="sq" style="background:#53fc18"></span><span class="nm">Kick</span><span class="dot" style="background:#3ddc84"></span></button>
+  <button class="it" data-v="kick"><span class="sq" style="background:#ff3347"></span><span class="nm">YouTube</span><span class="dot" style="background:#f0b45a"></span></button>
+  <button class="it" data-v="kick"><span class="sq" style="background:#25f4ee"></span><span class="nm">TikTok</span><span class="dot" style="background:#f0b45a"></span></button>
+  <button class="it" data-v="kick"><span class="sq" style="background:#4f8cff"></span><span class="nm">StreamElements</span><span class="dot" style="background:#5a5a6c"></span></button>
+  <div class="grp">PERSONALIZAR</div>
+  <button class="it" data-v="sons">Sons e recompensas</button>
+  <button class="it" data-v="sons">Aparência do chat</button>
+  <button class="it" data-v="inicio">Links para o OBS</button>
+  <button class="it" data-v="inicio">Avançado</button>
+</nav>
+
+<main>
+<!-- INÍCIO -->
+<section class="view on" id="v-inicio">
+  <h1>Início</h1>
+  <p class="sub">Resumo do que está ligado. Clique numa plataforma para configurar.</p>
+  <div class="grid">
+    <div class="card pcard" style="border-top-color:#9146ff"><b>Twitch</b><span class="chip ok">Conectado</span><span class="mut">Feed completo · seu_canal</span></div>
+    <div class="card pcard" style="border-top-color:#53fc18"><b>Kick</b><span class="chip ok">Conectado</span><span class="mut">Chat e eventos</span></div>
+    <div class="card pcard" style="border-top-color:#ff3347"><b>YouTube</b><span class="chip wait">Aguardando a live</span><span class="mut">Conecta quando você entrar ao vivo</span></div>
+    <div class="card pcard" style="border-top-color:#25f4ee"><b>TikTok</b><span class="chip wait">Aguardando a live</span><span class="mut">Conecta quando você entrar ao vivo</span></div>
+    <div class="card pcard" style="border-top-color:#4f8cff"><b>StreamElements</b><span class="chip off">Desligado</span><span class="mut">Opcional: doações no feed</span></div>
+  </div>
+  <div class="row2">
+    <div class="card"><h2>Falta configurar</h2>
+      <div class="line"><span class="chk"></span><span class="grow">Escolher a saída de som das recompensas</span><a href="#">Configurar</a></div>
+      <div class="line"><span class="chk"></span><span class="grow">Adicionar o chat e o feed no OBS</span><a href="#">Ver links</a></div>
+      <div class="line" style="color:#8e8ea2"><span class="chk done"></span><span class="grow" style="text-decoration:line-through">Colocar os canais</span></div>
+    </div>
+    <div class="card"><h2>Links rápidos para o OBS</h2>
+      <div class="line"><div class="grow"><b>Chat geral</b><div class="mono">http://127.0.0.1:8782/dock</div></div><button class="btn">Copiar</button></div>
+      <div class="line"><div class="grow"><b>Feed geral</b><div class="mono">http://127.0.0.1:8782/eventos</div></div><button class="btn">Copiar</button></div>
+      <a href="#">Ver todos os links e como adicionar</a>
+    </div>
+  </div>
+</section>
+
+<!-- TWITCH -->
+<section class="view" id="v-twitch">
+  <h1>Twitch</h1>
+  <p class="sub">Escolha como conectar. Recomendamos entrar com a Twitch para ter o feed completo.</p>
+  <div class="card" style="margin-bottom:22px">
+    <label for="canal">Canal da Twitch</label>
+    <input id="canal" type="text" value="seu_canal">
+    <span class="mut">Pode colar o nome, @nome ou o link (twitch.tv/nome). Ao entrar com a Twitch, preenchemos sozinho.</span>
+  </div>
+  <div class="opts" style="margin-bottom:22px">
+    <div class="card opt rec"><span class="tag">RECOMENDADO</span>
+      <h2>Opção 1 — Entrar com a Twitch</h2>
+      <span class="mut">Feed 100% completo.</span>
+      <ul class="list">
+        <li><span class="y">✓</span>Follows da Twitch no feed</li>
+        <li><span class="y">✓</span>Badges no chat (sub, mod, VIP)</li>
+        <li><span class="y">✓</span>Recompensas com som <span class="mut">(só canais Afiliados ou Parceiros)</span></li>
+      </ul>
+      <button class="btn pri big" id="entrar">Entrar com a Twitch</button>
+      <div class="code" id="codigo" style="display:none">
+        <div><div class="mut">Seu código</div><b>WDJB-MJHT</b></div>
+        <button class="btn">Copiar</button>
+        <button class="btn pri">Abrir twitch.tv/activate</button>
+        <span class="mut" style="flex-basis:100%">Confirme o código na página da Twitch. Esta tela atualiza sozinha… aguardando.</span>
+      </div>
+      <span class="mut">A Twitch pode pedir para entrar de novo a cada 30 dias.</span>
+    </div>
+    <div class="card opt">
+      <h2>Opção 2 — Só o nome do canal</h2>
+      <span class="mut">Sem login. Basta o campo "Canal da Twitch" acima.</span>
+      <div class="warn">
+        <b>Sem login você perde:</b>
+        <ul class="list" style="margin-top:8px">
+          <li><span class="n">✗</span>Follows da Twitch no feed</li>
+          <li><span class="n">✗</span>Badges no chat</li>
+          <li><span class="n">✗</span>Recompensas com som</li>
+        </ul>
+      </div>
+      <span class="mut"><b style="color:var(--tx)">Continua funcionando:</b> chat da Twitch, subs, presentes de sub, bits e raids no feed, e todas as outras plataformas.</span>
+    </div>
+  </div>
+  <details><summary>Avançado: usar meu próprio aplicativo da Twitch</summary>
+    <p class="mut">Para quem já tem um app em dev.twitch.tv. Não é necessário para a maioria das pessoas.</p>
+  </details>
+</section>
+
+<!-- KICK (exemplo de plataforma simples) -->
+<section class="view" id="v-kick">
+  <h1>Kick</h1>
+  <p class="sub">Só o nome do canal. Não precisa de login.</p>
+  <div class="card">
+    <label for="kick">Canal do Kick</label>
+    <input id="kick" type="text" value="seu_canal">
+    <span class="mut">Pode colar o link (kick.com/nome).</span>
+    <div class="line"><span class="chip ok">Conectado</span><span class="grow mut">Chat, follows, subs, presentes e kicks no feed</span></div>
+    <details><summary>Como fazer? / Não conecta?</summary><p class="mut">Explicação curta e os campos manuais de ID aparecem aqui só se precisar.</p></details>
+  </div>
+  <p class="mut" style="margin-top:14px">YouTube, TikTok e StreamElements seguem este mesmo formato.</p>
+</section>
+
+<!-- SONS -->
+<section class="view" id="v-sons">
+  <h1>Sons e recompensas</h1>
+  <p class="sub">Onde os sons tocam e qual som cada recompensa toca.</p>
+  <div class="card" style="margin-bottom:22px">
+    <label for="saida">Saída de som das recompensas</label>
+    <div style="display:flex;gap:10px;flex-wrap:wrap"><select id="saida" class="btn" style="flex:1;min-width:240px;text-align:left"><option>Padrão do sistema</option></select><button class="btn">Testar som</button></div>
+    <span class="mut">Ex.: um canal do Wave Link/VoiceMeeter que o OBS captura, ou a saída padrão.</span>
+  </div>
+  <div class="card"><h2>Recompensas do canal</h2>
+    <div class="line"><span class="grow"><b>Rojão</b><div class="mut">500 pontos</div></span><select class="btn"><option>rojao.mp3</option></select><button class="btn">▶</button></div>
+    <div class="line"><span class="grow"><b>Aplausos</b><div class="mut">300 pontos</div></span><select class="btn"><option>— sem som —</option></select><button class="btn">▶</button></div>
+    <a href="#">Abrir pasta de sons</a>
+  </div>
+</section>
+</main>
+</div>
+
+<div class="save"><span>Você tem alterações não salvas.</span><button class="btn">Descartar</button><button class="btn pri">Salvar</button></div>
+
+<script>
+document.querySelectorAll('.it').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.it').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.getElementById('v-'+b.dataset.v).classList.add('on');
+});
+document.getElementById('entrar').onclick=e=>{e.target.style.display='none';document.getElementById('codigo').style.display='flex'};
+</script>
+</body>
+</html>

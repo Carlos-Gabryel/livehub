@@ -189,7 +189,7 @@ async def test_recompensas_tem_seletor_de_saida(rt):
             c = await r.text()
     assert 'id="saida"' in t and "/api/audio/testar" in t and "/config#twitch" in t
     assert "Saída de som das recompensas" in t and "Saída de som das recompensas" in c
-    assert "Opção 1" in c and "Opção 2" in c and "Sem login você perde:" in c and "adges da Twitch no chat" in c
+    assert "Opção 1" in c and "Opção 2" in c and "Sem login você perde:" in c and "Badges no chat" in c
     assert "Só é necessário se você quiser usar as recompensas" not in c
     assert "Seu canal ainda não é Afiliado/Parceiro" in t
 
