@@ -4,7 +4,7 @@
 <style>
 :root{color-scheme:dark;--bg:#0e0e10;--panel:#18181b;--line:#26262c;--fg:#efeff1;--mut:#898990;--tw:#9146ff;--ok:#3ddc84;--err:#e5484d}
 *{box-sizing:border-box}
-body{margin:0;padding:20px;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;max-width:760px;margin:auto}
+body{margin:0;padding:20px;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,"Segoe UI",Roboto,sans-serif;max-width:1100px;margin:auto}
 h1{font-size:20px;margin:0 0 4px}h2{font-size:16px;margin:0 0 10px;color:#b9a6ff}
 section{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:16px;margin:16px 0}
 label{display:block;margin:10px 0 3px;color:var(--mut);font-size:13px}
@@ -23,6 +23,19 @@ ol{padding-left:20px}code{background:#0e0e10;padding:1px 5px;border-radius:3px;w
 #barra{position:sticky;bottom:0;background:var(--bg);padding:12px 0;display:flex;gap:12px;align-items:center}
 #msg{font-weight:600}
 a{color:#b9a6ff}
+#ap{display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1fr);gap:20px;align-items:start}
+@media(max-width:900px){#ap{grid-template-columns:1fr}}
+.tabs{display:flex;gap:6px;margin-bottom:10px}.tabs button.on{background:var(--tw);border-color:var(--tw);font-weight:600}
+#apform{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}#apform .f{min-width:0}
+#apform .f label{margin:8px 0 3px}#apform .f.chk{display:flex;align-items:center;gap:6px;padding-top:22px}
+#apform .f.chk label{margin:0}#apform .f.chk input{width:auto}
+#apform input[type=color]{width:100%;height:34px;padding:2px;background:#0e0e10;border:1px solid #333;border-radius:4px}
+#apform input[type=range]{width:100%}
+#apprev{position:sticky;top:10px}
+#apmold{border:1px solid var(--line);border-radius:6px;height:460px;overflow:hidden;background:#0e0e10}
+#apmold.xadrez{background:repeating-conic-gradient(#8a8a8a 0 25%,#c8c8c8 0 50%) 0 0/20px 20px}
+#apmold iframe{width:100%;height:100%;border:0;display:block;color-scheme:light;background:transparent}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
 </style></head><body>
 <h1>Configurações do LiveHub</h1>
 <div class="mut">Tudo é feito aqui, sem editar arquivos. Preencha o que quiser e clique em <b>Salvar</b> no fim da página.</div>
@@ -95,6 +108,26 @@ a{color:#b9a6ff}
     <div class="mut">Fonte de navegador. Opções no fim do link: <code>?sumir=SEGUNDOS</code> (some após N segundos; 0 = nunca), <code>max=15</code> (máximo de mensagens), <code>fonte=24</code> (tamanho da letra em px), <code>ignorar=nome1,nome2</code> (esconde esses usuários). Junte com &amp;, ex.: <code>?sumir=30&amp;max=10&amp;fonte=22</code>.</div></div>
   <div class="link"><b>Painel de recompensas</b><div class="url"><code id="u_recompensas"></code><button onclick="copiar(U.recompensas,this)">Copiar</button></div>
     <div class="mut">Dock para ligar recompensas a sons.</div></div>
+</section>
+
+<section id="aparencia"><h2>Aparência do chat</h2>
+  <div class="mut">As mudanças aparecem no OBS na hora, sem atualizar a fonte.</div>
+  <div class="tabs" style="margin-top:10px"><button type="button" id="tab_dock" onclick="apAba('dock')">Painel (/dock)</button><button type="button" id="tab_neutro" onclick="apAba('neutro')">Overlay (/neutro)</button></div>
+  <div id="ap">
+    <div>
+      <div class="mut">Modelos prontos (preenchem o formulário; depois é só salvar):</div>
+      <div class="presets" id="appresets"></div>
+      <div id="apform"></div>
+      <div class="row">
+        <button class="p" type="button" onclick="apSalvar()">Salvar aparência</button>
+        <button type="button" id="ap_reset" onclick="apPedirReset(true)">Restaurar padrão</button>
+        <span id="ap_conf" style="display:none"><span class="mut">Voltar tudo ao visual original?</span> <button class="d" type="button" onclick="apReset()">Sim, restaurar</button> <button type="button" onclick="apPedirReset(false)">Cancelar</button></span>
+        <span id="ap_msg" style="font-weight:600"></span>
+      </div>
+    </div>
+    <div id="apprev"><div class="mut" style="margin-bottom:6px">Prévia ao vivo (mensagens de exemplo)</div>
+      <div id="apmold"><iframe id="apframe" title="Prévia do chat"></iframe></div></div>
+  </div>
 </section>
 
 <section id="avancado"><details><summary><b>Avançado</b></summary>
@@ -191,6 +224,119 @@ async function testarSom() {
   $('au_msg').textContent = r.ok ? 'Se você ouviu o bipe, está tudo certo.' : (r.j.erro || 'Erro.');
 }
 async function abrirSons() { const r = await api('/api/abrir-sons', {}); if (!r.ok) $('au_msg').textContent = r.j.erro || 'Erro.'; }
+
+/* ---- Aparência do chat ---- */
+const AP_CAMPOS = [
+  ['fonte','Fonte','fonte'], ['tamanho','Tamanho da letra (px, 10 a 48)','num',10,48], ['negrito','Letra em negrito','bool'],
+  ['cor_fundo','Cor do fundo','cor'], ['opacidade_fundo','Opacidade do fundo','pct'],
+  ['cor_fundo_fim','Degradê no fundo','degrade'], ['cor_texto','Cor do texto','cor'],
+  ['cor_msg_fundo','Cor do fundo de cada mensagem','cor'], ['opacidade_msg','Opacidade do fundo da mensagem','pct'],
+  ['cor_destaque','Cor de destaque (eventos)','cor'],
+  ['cor_nome_modo','Cor do nome','sel',[['usuario','Cor do próprio usuário'],['plataforma','Cor da plataforma'],['fixa','Cor fixa'],['paleta','Paleta automática']]],
+  ['cor_nome_fixa','Cor fixa do nome','cor'],
+  ['contorno','Contorno do texto','sel',[['nenhum','Nenhum'],['sombra','Sombra'],['contorno','Contorno']]], ['cor_contorno','Cor do contorno / sombra','cor'],
+  ['espacamento','Espaço entre mensagens (px, 0 a 20)','num',0,20], ['raio','Cantos arredondados (px, 0 a 24)','num',0,24],
+  ['mostrar_icones','Mostrar ícones das plataformas','bool'], ['mostrar_badges','Mostrar badges (mod, sub...)','bool'],
+  ['mostrar_emotes','Mostrar emotes (desligado: mostra o nome)','bool'],
+  ['animacao','Animação ao chegar','sel',[['nenhuma','Nenhuma'],['fade','Aparecer suave'],['deslizar','Deslizar']]],
+  ['sumir','Sumir após (segundos, 0 = nunca)','num',0,600], ['max','Máximo de mensagens (1 a 300)','num',1,300],
+];
+const AP_PRESETS = {
+  'Escuro': {cor_fundo:'#0e0e10', cor_fundo_fim:'', opacidade_fundo:100, cor_msg_fundo:'#000000', opacidade_msg:0, cor_texto:'#efeff1', cor_destaque:'#1f1a2b', contorno:'nenhum'},
+  'Claro': {cor_fundo:'#ffffff', cor_fundo_fim:'', opacidade_fundo:100, cor_msg_fundo:'#000000', opacidade_msg:0, cor_texto:'#1e1b3a', cor_destaque:'#ece6ff', contorno:'nenhum'},
+  'Transparente (overlay)': {opacidade_fundo:0, cor_fundo_fim:'', cor_msg_fundo:'#000000', opacidade_msg:55, cor_texto:'#ffffff', contorno:'sombra', cor_contorno:'#000000', raio:6},
+  'Alto contraste': {cor_fundo:'#000000', cor_fundo_fim:'', opacidade_fundo:100, cor_msg_fundo:'#000000', opacidade_msg:100, cor_texto:'#ffffff', cor_destaque:'#333300', cor_nome_modo:'fixa', cor_nome_fixa:'#ffee00', contorno:'contorno', cor_contorno:'#000000', negrito:true},
+};
+let AP = null, apAlvo = 'dock', apRascunho = {}, apTimer = null;
+
+function apCampo([k, rot, tipo, a, b]) {
+  const id = 'ap_' + k, d = document.createElement('div'); d.className = 'f' + (tipo === 'bool' ? ' chk' : '');
+  const l = (t) => '<label for="' + id + '">' + t + '</label>';
+  if (tipo === 'bool') d.innerHTML = '<input type="checkbox" id="' + id + '">' + l(rot);
+  else if (tipo === 'cor') d.innerHTML = l(rot) + '<input type="color" id="' + id + '">';
+  else if (tipo === 'pct') d.innerHTML = l(rot + ': <b id="' + id + '_v"></b>') + '<input type="range" id="' + id + '" min="0" max="100" step="1">';
+  else if (tipo === 'num') d.innerHTML = l(rot) + '<input type="number" id="' + id + '" min="' + a + '" max="' + b + '">';
+  else if (tipo === 'sel') d.innerHTML = l(rot) + '<select id="' + id + '">' + a.map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('') + '</select>';
+  else if (tipo === 'degrade') d.innerHTML = l('Degradê no fundo (cor final)') + '<div style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="' + id + '_on" title="Ligar degradê"><input type="color" id="' + id + '"></div>';
+  else if (tipo === 'fonte') d.innerHTML = l(rot) + '<select id="' + id + '"></select><input type="text" id="' + id + '_txt" placeholder="nome de outra fonte instalada" maxlength="60" style="display:none;margin-top:6px">';
+  d.addEventListener('input', apMudou); d.addEventListener('change', apMudou);
+  return d;
+}
+function apMontar() {
+  const f = $('apform'); f.innerHTML = '';
+  for (const c of AP_CAMPOS) f.appendChild(apCampo(c));
+  const sel = $('ap_fonte');
+  for (const n of AP.fontes_sugeridas) sel.add(new Option(n, n));
+  sel.add(new Option('Padrão do sistema', 'system-ui')); sel.add(new Option('Outra fonte instalada...', '__outra'));
+  const pr = $('appresets');
+  for (const n of Object.keys(AP_PRESETS)) { const b = document.createElement('button'); b.type = 'button'; b.textContent = n; b.onclick = () => { apPreencher({...apLer(), ...AP_PRESETS[n]}); apMudou(); }; pr.appendChild(b); }
+  $('apframe').onload = apPrevia;
+}
+function apPreencher(v) {
+  for (const [k, , tipo] of AP_CAMPOS) {
+    const e = $('ap_' + k);
+    if (tipo === 'bool') e.checked = !!v[k];
+    else if (tipo === 'degrade') { $('ap_' + k + '_on').checked = !!v[k]; e.value = v[k] || '#ffffff'; }
+    else if (tipo === 'fonte') {
+      const known = [...e.options].some(o => o.value === v[k] && o.value !== '__outra');
+      e.value = known ? v[k] : '__outra'; $('ap_fonte_txt').value = known ? '' : v[k];
+    } else e.value = v[k];
+  }
+  apRotulos();
+}
+function apRotulos() {
+  for (const k of ['opacidade_fundo', 'opacidade_msg']) $('ap_' + k + '_v').textContent = $('ap_' + k).value + '%';
+  $('ap_fonte_txt').style.display = $('ap_fonte').value === '__outra' ? '' : 'none';
+  $('ap_cor_fundo_fim').disabled = !$('ap_cor_fundo_fim_on').checked;
+}
+function apLer() {
+  const v = {};
+  for (const [k, , tipo] of AP_CAMPOS) {
+    const e = $('ap_' + k);
+    if (tipo === 'bool') v[k] = e.checked;
+    else if (tipo === 'num' || tipo === 'pct') v[k] = e.value === '' ? null : +e.value;
+    else if (tipo === 'degrade') v[k] = $('ap_' + k + '_on').checked ? e.value : '';
+    else if (tipo === 'fonte') v[k] = e.value === '__outra' ? $('ap_fonte_txt').value.trim() : e.value;
+    else v[k] = e.value;
+  }
+  return v;
+}
+function apMudou() {
+  apRotulos(); apRascunho[apAlvo] = apLer();
+  clearTimeout(apTimer); apTimer = setTimeout(apPrevia, 100);
+}
+function apPrevia() {
+  const w = $('apframe').contentWindow; if (w) w.postMessage({tipo: 'preview', valores: apLer()}, location.origin);
+}
+function apAba(a) {
+  if (AP && apAlvo) apRascunho[apAlvo] = apLer();
+  apAlvo = a;
+  $('tab_dock').className = a === 'dock' ? 'on' : ''; $('tab_neutro').className = a === 'neutro' ? 'on' : '';
+  $('apmold').className = a === 'neutro' ? 'xadrez' : '';
+  if (!AP) return;
+  apPreencher(apRascunho[a] || AP[a]);
+  const fr = $('apframe'); fr.src = '/' + a + '?demo=1';
+  apPedirReset(false); $('ap_msg').textContent = '';
+}
+function apMsg(t, ok) { const m = $('ap_msg'); m.textContent = t; m.className = ok ? 'ok' : 'err'; }
+async function apSalvar() {
+  apMsg('Salvando...', true);
+  const r = await api('/api/aparencia', {alvo: apAlvo, valores: apLer()});
+  if (!r.ok) { apMsg((r.j.campo ? '[' + r.j.campo + '] ' : '') + (r.j.erro || 'Erro ao salvar.'), false); return; }
+  AP = r.j; delete apRascunho[apAlvo]; apMsg('Salvo! O OBS já foi atualizado.', true);
+}
+function apPedirReset(sim) { $('ap_conf').style.display = sim ? '' : 'none'; $('ap_reset').style.display = sim ? 'none' : ''; }
+async function apReset() {
+  const r = await api('/api/aparencia/reset', {alvo: apAlvo});
+  apPedirReset(false);
+  if (!r.ok) { apMsg(r.j.erro || 'Erro.', false); return; }
+  AP = r.j; delete apRascunho[apAlvo]; apPreencher(AP[apAlvo]); apPrevia(); apMsg('Visual original restaurado.', true);
+}
+async function apIniciar() {
+  const r = await api('/api/aparencia'); if (!r.ok) return;
+  AP = r.j; apMontar(); apAba('dock');
+}
+apIniciar();
 carregar(); setInterval(atualizarStatus, 5000);
 if (location.hash) setTimeout(() => { const e = document.querySelector(location.hash); if (e) e.scrollIntoView(); }, 300);
 </script></body></html>
