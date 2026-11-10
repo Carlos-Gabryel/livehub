@@ -26,7 +26,23 @@ def _abrir(url):
         webbrowser.open(url)
 
 
+def _sair_duro(code):
+    """Fecha o log e termina o processo sem esperar threads (executor, nativas) que nao morrem."""
+    logging.shutdown()
+    os._exit(code)
+
+
 def main_tray():
+    """Roda a bandeja e termina o processo de forma garantida."""
+    try:
+        code = _main_tray()
+    except BaseException:  # noqa: BLE001
+        logging.getLogger("livehub").exception("erro na bandeja")
+        code = 1
+    _sair_duro(code)
+
+
+def _main_tray():
     log = logging.getLogger("livehub")
     mutex = startup.acquire_singleton()
     if mutex is None:

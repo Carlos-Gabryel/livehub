@@ -25,6 +25,7 @@ PLATAFORMAS = {
     "tiktok": (TikTok, lambda c: (c["tiktok"].get("username") or "").strip()),
     "streamelements": (StreamElements, lambda c: (c["streamelements"].get("jwt") or "").strip()),
 }
+SHUTDOWN_TIMEOUT = 2.0  # aiohttp: espera por handlers abertos (padrao 60 s)
 STATUS_INATIVO = {"streamelements": "sem token"}
 
 
@@ -85,7 +86,7 @@ class Runtime:
         self.runner = web.AppRunner(self.make_web_app(), access_log=None)
         await self.runner.setup()
         port = self.cfg["web_port"]
-        await web.TCPSite(self.runner, "127.0.0.1", port).start()
+        await web.TCPSite(self.runner, "127.0.0.1", port, shutdown_timeout=SHUTDOWN_TIMEOUT).start()
         log.info("LiveHub em http://127.0.0.1:%s/", port)
         async with self._lock:
             await self._sync_sb()
@@ -129,7 +130,7 @@ class Runtime:
             r = web.AppRunner(sbserver.make_app(self.hub, self.cfg), access_log=None)
             await r.setup()
             try:
-                await web.TCPSite(r, "127.0.0.1", sb["port"]).start()
+                await web.TCPSite(r, "127.0.0.1", sb["port"], shutdown_timeout=SHUTDOWN_TIMEOUT).start()
             except OSError as e:
                 log.error("Nao consegui abrir a porta %s do Streamer.bot compat: %s", sb["port"], e)
                 await r.cleanup()
@@ -151,14 +152,48 @@ class Runtime:
             self._start_tasks()
             log.info("configuracoes recarregadas")
 
+    async def _passo(self, nome, coro, timeout):
+        """Um passo do encerramento: limitado no tempo e sem propagar erro."""
+        log.info("encerrando: %s", nome)
+        try:
+            await asyncio.wait_for(coro, timeout)
+            log.info("encerrando: %s ok", nome)
+        except asyncio.TimeoutError:
+            log.warning("encerrando: %s excedeu %.0fs; seguindo", nome, timeout)
+        except Exception:  # noqa: BLE001
+            log.exception("encerrando: %s falhou", nome)
+
+    async def _cancelar_tasks(self):
+        tasks, self.tasks = list(self.tasks.values()), {}
+        for t in tasks:
+            t.cancel()
+        if tasks:
+            _, pend = await asyncio.wait(tasks, timeout=3)
+            if pend:
+                log.warning("encerrando: %d tarefa(s) ignoraram o cancelamento", len(pend))
+
+    async def _fechar_ws(self):
+        h = self.hub
+        todos = list(h.dock_clients) + list(h.feed_clients) + list(h.sb_clients)
+        if todos:
+            await asyncio.gather(*(ws.close(code=1001, message=b"shutdown") for ws in todos),
+                                 return_exceptions=True)
+
     async def stop(self):
-        async with self._lock:
-            await self._stop_tasks()
+        """Encerramento limitado (~10 s no pior caso); nunca levanta."""
+        async def tarefas():
+            async with self._lock:
+                await self._cancelar_tasks()
+        # o lock pode estar preso por um reload travado: nao esperar alem do limite
+        await self._passo("tarefas das plataformas", tarefas(), 4)
         if self.svc:
-            await self.svc.player.stop()
-        for r in (self.sb_runner, self.runner):
+            async def player():
+                await self.svc.player.stop()
+            await self._passo("player", player(), 2)
+        await self._passo("conexoes websocket", self._fechar_ws(), 2)
+        for nome, r in (("Streamer.bot compat", self.sb_runner), ("servidor web", self.runner)):
             if r:
-                await r.cleanup()
+                await self._passo(nome, r.cleanup(), 3)
         self.sb_runner = self.runner = None
         if self.session:
-            await self.session.close()
+            await self._passo("sessao http", self.session.close(), 2)

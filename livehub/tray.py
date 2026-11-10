@@ -64,6 +64,19 @@ class RuntimeThread(threading.Thread):
             self.loop.call_soon_threadsafe(self._stop_ev.set)
 
 
+def encerrar(icon, thread, espera=8):
+    """Acao do menu Sair: some da bandeja ja, pede o stop, espera limitado e fecha o loop do pystray."""
+    try:
+        icon.visible = False
+    except Exception:  # noqa: BLE001
+        log.exception("nao consegui esconder o icone")
+    thread.request_stop()
+    thread.join(espera)
+    if thread.is_alive():
+        log.warning("runtime nao encerrou em %ss; saindo mesmo assim", espera)
+    icon.stop()
+
+
 def run_tray(thread: RuntimeThread, base_url: str, abrir_config: bool):
     import pystray
 
@@ -85,9 +98,7 @@ def run_tray(thread: RuntimeThread, base_url: str, abrir_config: bool):
             log.exception("nao consegui alterar 'Iniciar com o Windows'")
 
     def sair(icon, item):
-        thread.request_stop()
-        thread.join(15)
-        icon.stop()
+        encerrar(icon, thread)
 
     menu = pystray.Menu(
         pystray.MenuItem("Abrir configurações", abrir("/config"), default=True),
