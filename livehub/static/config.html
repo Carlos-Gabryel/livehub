@@ -37,8 +37,8 @@ main{flex:1;min-width:0;padding:32px 40px 110px;max-width:1060px}
 #ap{display:grid;grid-template-columns:minmax(300px,1fr) minmax(300px,1fr);gap:20px;align-items:start}
 .tabs{display:flex;gap:8px}.tabs .btn.on{background:var(--acc);border-color:var(--acc);color:#fff}
 #apform{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}#apform .f{min-width:0}
-#apform .f label{margin:8px 0 4px;font-size:13px}#apform .f.chk{display:flex;align-items:center;gap:8px;padding-top:22px}
-#apform .f.chk label{margin:0;flex:1}#apform .f.chk input{width:18px;height:18px;flex:none}
+#apform .f label{margin:8px 0 4px;font-size:13px}#apform .f.fchk{display:flex;align-items:center;gap:8px;padding-top:22px}
+#apform .f.fchk label{margin:0;flex:1}#apform .f.fchk input{width:18px;height:18px;flex:none}
 #apform input[type=color]{width:100%;height:38px;padding:2px;background:#101017;border:1px solid #3a3a48;border-radius:8px}
 #apform input[type=range]{width:100%;accent-color:var(--acc)}
 #apprev{position:sticky;top:10px}
@@ -542,7 +542,7 @@ const AP_PRESETS = {
 let AP = null, apAlvo = 'dock', apRascunho = {}, apTimer = null, apPronto = false;
 
 function apCampo([k, rot, tipo, a, b]) {
-  const id = 'ap_' + k, d = document.createElement('div'); d.className = 'f' + (tipo === 'bool' ? ' chk' : '');
+  const id = 'ap_' + k, d = document.createElement('div'); d.className = 'f' + (tipo === 'bool' ? ' fchk' : '');
   const l = (t) => '<label for="' + id + '">' + t + '</label>';
   if (tipo === 'bool') d.innerHTML = '<input type="checkbox" id="' + id + '">' + l(rot);
   else if (tipo === 'cor') d.innerHTML = l(rot) + '<input type="color" id="' + id + '">';
