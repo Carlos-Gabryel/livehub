@@ -1,0 +1,6 @@
+aiohttp==3.14.5
+python-socketio==5.17.1
+TikTokLive==7.0.1
+sounddevice==0.5.6
+soundfile==0.14.0
+numpy
