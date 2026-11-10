@@ -70,6 +70,10 @@ Chat na tela da live (aparece para o publico):
 
 RECOMPENSAS COM SOM (OPCIONAL)
 ------------------------------
+ATENCAO: requer canal Afiliado ou Parceiro da Twitch (so esses canais
+tem pontos do canal e recompensas). Se o seu canal ainda nao e Afiliado,
+pule esta parte: o chat geral e o feed funcionam normalmente.
+
 Resumo dos passos (a pagina /recompensas tem o guia completo):
   1. Conecte a sua conta da Twitch na pagina de configuracoes.
   2. Coloque os arquivos de som na pasta de sons (menu da bandeja >
