@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chat neutro</title>
+<!-- Overlay da live: todas as plataformas no mesmo padrão, sem ícone/badge/cor de origem, fundo transparente.
+     Parâmetros: ?sumir=0 (segundos até a mensagem sumir, 0 = nunca) &max=15 &fonte=22 &ignorar=nome1,nome2
+     Bots (lista, badge de bot, nome terminado em "bot") e comandos (!algo) não aparecem. -->
+<style>
+  @font-face { font-family:"Fira Code"; font-weight:600; src:url(/fonts/FiraCode-SemiBold.ttf); }
+  @font-face { font-family:"Fira Code"; font-weight:700; src:url(/fonts/FiraCode-Bold.ttf); }
+  html,body { margin:0; height:100%; background:rgba(0,0,0,0) !important; overflow:hidden; }
+  #caixa { position:absolute; inset:0; border-radius:14px; overflow:hidden;
+    background:linear-gradient(to bottom,#dcebff,#ebe1ff); box-shadow:inset 0 0 0 1px #c9c4f0; }
+  body { color:#1e1b3a; font:700 var(--fs,22px)/1.35 "Fira Code",monospace; }
+  #log { position:absolute; left:0; right:0; bottom:0; padding:8px 10px; }
+  .m { margin:4px 0; word-break:break-word; transition:opacity .6s; }
+  .m.out { opacity:0; }
+  .u { margin-right:6px; }
+  .u::after { content:":"; color:#1e1b3a; }
+  .t { font-weight:600; }
+  .emote { height:1.6em; vertical-align:middle; margin:-3px 1px; }
+</style>
+</head>
+<body>
+<div id="caixa"><div id="log"></div></div>
+<script>
+const q = new URLSearchParams(location.search);
+const SUMIR = +(q.get('sumir') ?? 0), MAX = +(q.get('max') ?? 15);
+if (q.get('fonte')) document.body.style.setProperty('--fs', +q.get('fonte') + 'px');
+const log = document.getElementById('log');
+const CORES = ['#c0262d','#b4540a','#8a6d00','#1d7a32','#0f7a73','#1f55c2','#6a35c9','#b3247f'];
+
+const BOTS = new Set(['streamelements','nightbot','moobot','streamlabs','fossabot','wizebot','sery_bot','botrix',
+  'kickbot','soundalerts','streamlootsbot','commanderroot','pokemoncommunitygame','blerp','tangiabot','lumiastream',
+  'streamerbot','botisimo','coebot','deepbot','phantombot','own3d','casterlabs',
+  ...(q.get('ignorar') || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean)]);
+function ehBot(m) {
+  const nome = (m.user || '').toLowerCase().replace(/\s+/g, '');
+  if (BOTS.has(nome) || /bot$/.test(nome)) return true;
+  if ((m.badges || []).some(b => /bot/i.test((b.title || '') + (b.id || '')))) return true;
+  const texto = (m.parts || []).map(p => p.v ?? p.name ?? '').join('').trim();
+  return texto.startsWith('!');
+}
+function cor(nome) { let h = 0; for (const c of nome.toLowerCase()) h = (h * 31 + c.charCodeAt(0)) >>> 0; return CORES[h % CORES.length]; }
+function safeUrl(u) { return typeof u === 'string' && /^https:\/\//.test(u) ? u : null; }
+
+function add(m) {
+  if (m.event) return;  // subs/raids/etc. revelariam a plataforma
+  if (ehBot(m)) return;
+  const row = document.createElement('div'); row.className = 'm';
+  row.dataset.key = m.platform + ':' + (m.id || ''); row.dataset.ukey = m.platform + ':' + (m.user_id || '');
+  const u = document.createElement('span'); u.className = 'u'; u.textContent = m.user; u.style.color = cor(m.user || '');
+  const t = document.createElement('span'); t.className = 't';
+  for (const p of m.parts || []) {
+    if (p.t === 'emote' && safeUrl(p.url)) {
+      const i = document.createElement('img'); i.className = 'emote'; i.src = p.url; i.alt = p.name; t.appendChild(i);
+    } else t.appendChild(document.createTextNode(p.v ?? p.name ?? ''));
+  }
+  row.append(u, t); log.appendChild(row);
+  while (log.children.length > MAX) log.removeChild(log.firstChild);
+  if (SUMIR > 0) {
+    const resto = SUMIR * 1000 - (Date.now() - (m.ts || Date.now() / 1000) * 1000);
+    setTimeout(() => { row.classList.add('out'); setTimeout(() => row.remove(), 700); }, Math.max(resto, 0));
+  }
+}
+
+function connect() {
+  const ws = new WebSocket('ws://' + location.host + '/dock/ws');
+  ws.onmessage = ev => {
+    const d = JSON.parse(ev.data);
+    if (d.type === 'history') { log.textContent = ''; d.messages.forEach(add); }
+    else if (d.type === 'msg') add(d.msg);
+    else if (d.type === 'delete') log.querySelectorAll('.m').forEach(r => {
+      if ((d.id && r.dataset.key === d.platform + ':' + d.id) || (d.user_id && r.dataset.ukey === d.platform + ':' + d.user_id)) r.remove(); });
+    else if (d.type === 'clear') log.querySelectorAll('.m').forEach(r => { if (r.dataset.key.startsWith(d.platform + ':')) r.remove(); });
+  };
+  ws.onclose = () => setTimeout(connect, 2000);
+}
+connect();
+</script>
+</body>
+</html>
