@@ -71,6 +71,10 @@ class Hub:
         self.history.extend(keep)
         await self._dock({"type": "clear", "platform": platform})
 
+    async def aparencia(self, alvo, valores):
+        """Avisa as paginas do chat (dock/overlay) que a aparencia mudou; elas ignoram tipos desconhecidos."""
+        await self._dock({"tipo": "aparencia", "alvo": alvo, "valores": valores})
+
     async def _dock(self, payload):
         text = json.dumps(payload, ensure_ascii=False)
         for ws in list(self.dock_clients):

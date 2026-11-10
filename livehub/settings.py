@@ -6,6 +6,25 @@ from . import paths
 
 log = logging.getLogger("settings")
 
+_APAR_BASE = {
+    "fonte": "system-ui", "tamanho": 14, "negrito": False,
+    "cor_fundo": "#0e0e10", "cor_fundo_fim": "", "opacidade_fundo": 100,
+    "cor_msg_fundo": "#000000", "opacidade_msg": 0,
+    "cor_texto": "#efeff1", "cor_destaque": "#1f1a2b",
+    "cor_nome_modo": "usuario", "cor_nome_fixa": "#d0d0d6",
+    "contorno": "nenhum", "cor_contorno": "#000000",
+    "espacamento": 3, "raio": 0,
+    "mostrar_icones": True, "mostrar_badges": True, "mostrar_emotes": True,
+    "animacao": "nenhuma", "sumir": 0, "max": 300,
+}
+# Padroes = visual original de cada pagina (nada muda para quem ja usa).
+DEFAULT_APARENCIA = {
+    "dock": dict(_APAR_BASE),
+    "neutro": {**_APAR_BASE, "fonte": "Fira Code", "tamanho": 22, "negrito": True,
+               "cor_fundo": "#dcebff", "cor_fundo_fim": "#ebe1ff", "cor_texto": "#1e1b3a",
+               "cor_nome_modo": "paleta", "cor_nome_fixa": "#1e1b3a", "espacamento": 4,
+               "mostrar_icones": False, "mostrar_badges": False, "max": 15},
+}
 DEFAULT_CONFIG = {
     "twitch": {"channel": ""},
     "kick": {"channel": "", "chatroom_id": None, "channel_id": None},
@@ -14,6 +33,7 @@ DEFAULT_CONFIG = {
     "streamerbot_compat": {"enabled": False, "port": 8080},
     "web_port": 8782,
     "audio": {"output_device": ""},
+    "aparencia": DEFAULT_APARENCIA,
 }
 DEFAULT_SECRETS = {
     "twitch": {"client_id": "", "client_secret": "", "access_token": "", "refresh_token": "",
