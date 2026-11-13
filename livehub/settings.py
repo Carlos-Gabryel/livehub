@@ -1,5 +1,5 @@
 """config.json, secrets.json e mapeamento.json em data_dir(). Escrita atomica, sempre UTF-8."""
-import base64, copy, json, logging, os, tempfile, time
+import base64, copy, json, logging, os, sys, tempfile, time
 from pathlib import Path
 
 from . import cofre, paths
@@ -169,6 +169,8 @@ FORMATO_SEGREDOS = "dpapi-v1"
 
 def _gravar_segredos(sec: dict):
     if not cofre.disponivel():
+        if sys.platform == "win32":  # nunca deveria acontecer: deixa visivel no log
+            log.error("criptografia do Windows indisponivel: segredos gravados SEM criptografia")
         atomic_write_json(secrets_path(), sec, 0o600)
         return
     cifrado = cofre.proteger(json.dumps(sec, ensure_ascii=False).encode("utf-8"))
@@ -185,8 +187,8 @@ def _ler_segredos():
     except FileNotFoundError:
         return None
     except (ValueError, OSError):
-        log.error("secrets.json ilegivel; usando padroes")
-        _isolar_segredos()
+        log.error("secrets.json ilegivel (nao e JSON); apagado, usando padroes")
+        _isolar_segredos(apagar=True)  # texto puro corrompido: nao deixar segredo legivel no disco
         return None
     if bruto.get("formato") == FORMATO_SEGREDOS:
         try:
@@ -207,10 +209,14 @@ def _ler_segredos():
     return bruto
 
 
-def _isolar_segredos():
+def _isolar_segredos(apagar=False):
+    """Cifrado ilegivel (outro usuario/PC): guarda copia unica, recuperavel no PC de origem. Texto puro: apaga."""
     path = secrets_path()
     try:
-        os.replace(path, path.with_name(f"{path.name}.ilegivel-{time.strftime('%Y%m%d-%H%M%S')}"))
+        if apagar:
+            path.unlink(missing_ok=True)
+        else:
+            os.replace(path, path.with_name(f"{path.name}.ilegivel-{time.strftime('%Y%m%d-%H%M%S')}-{time.time_ns()}"))
     except OSError:
         pass
 

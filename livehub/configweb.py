@@ -17,6 +17,11 @@ NOME_RE = re.compile(r"^[A-Za-z0-9_.\-]+$")
 TIMEOUT_KICK = 10.0
 
 
+def _p_log(v, n=80) -> str:
+    """Texto vindo da pagina, seguro para o log: sem quebras/controles, tamanho limitado."""
+    return re.sub(r"[\x00-\x1f\x7f]", "?", str(v))[:n]
+
+
 class Erro(Exception):
     def __init__(self, campo, msg):
         self.campo, self.msg = campo, msg
@@ -399,7 +404,7 @@ def add_routes(app: web.Application, rt):
         try:
             info = aplicar(body, cfg, sec)
         except Erro as e:
-            log.warning("config recusada: campo=%s erro=%s", e.campo, e.msg)
+            log.warning("config recusada: campo=%s erro=%s", _p_log(e.campo), _p_log(e.msg, 200))
             return web.json_response({"campo": e.campo, "erro": e.msg}, status=400)
         kick = {"resolvido": None, "precisa_manual": False}
         k = cfg["kick"]
@@ -416,7 +421,7 @@ def add_routes(app: web.Application, rt):
         except OSError as e:
             log.warning("falha ao salvar: %r", type(e).__name__)
             return web.json_response({"erro": "Não consegui salvar as configurações."}, status=500)
-        log.info("config salva: %s", sorted(body))
+        log.info("config salva: %s", [_p_log(k, 40) for k in sorted(body)][:30])
         for linha in _mudancas_segredos(antes, sec):
             log.info(linha)
         await rt.reload()
