@@ -9,3 +9,5 @@ config.json
 secrets.json
 mapeamento.json
 sons/
+*.pem
+.livehub-keys/

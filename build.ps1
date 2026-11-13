@@ -1,4 +1,5 @@
 # Gera dist\LiveHub\ e dist\LiveHub-<versao>-windows.zip
+param([switch]$SemAssinatura)
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
 $py = Join-Path $PSScriptRoot ".venv\Scripts\python.exe"
@@ -21,3 +22,10 @@ $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
 $line = "$hash  LiveHub-$version-windows.zip"
 [System.IO.File]::WriteAllText((Join-Path $PSScriptRoot "$zip.sha256"), $line + "`n", (New-Object System.Text.ASCIIEncoding))
 $line
+if ($SemAssinatura) {
+    Write-Warning "BUILD SEM ASSINATURA: NAO PUBLIQUE este build (o auto-update dos usuarios vai recusa-lo)."
+} else {
+    & $py tools/assinar.py $zip $version
+    if ($LASTEXITCODE -ne 0) { throw "Assinatura falhou" }
+    "{0}.sig: {1}" -f $zip, (Get-Content "$zip.sig" -Raw).Trim()
+}

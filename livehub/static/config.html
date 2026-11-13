@@ -518,7 +518,11 @@ function pintarUpdate(u) {
   $('up_det').style.display = u.notas ? '' : 'none';
   const auto = u.estado === 'pronto';
   $('up_btn').style.display = auto ? '' : 'none';
-  $('up_link').style.display = auto ? 'none' : ''; $('up_link').href = u.url_release || '#';
+  $('up_link').style.display = auto ? 'none' : ''; $('up_link').href = urlRelease(u.url_release);
+}
+function urlRelease(x) {
+  const fixo = 'https://github.com/Carlos-Gabryel/livehub/releases/latest';
+  try { const p = new URL(x); return p.protocol === 'https:' && p.hostname === 'github.com' ? p.href : fixo; } catch (e) { return fixo; }
 }
 async function atualizarUpdate() { const r = await api('/api/update'); if (r.ok) pintarUpdate(r.j); }
 async function verificarUpdate() {

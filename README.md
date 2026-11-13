@@ -6,7 +6,11 @@ Processo unico, uma pagina web em `http://127.0.0.1:8782/` (porta em `config.jso
 ## Atualizacoes
 
 A partir da 0.2.0 o LiveHub se atualiza sozinho (GitHub Releases). Quem usa a 0.1.x instala a 0.2.0 manualmente uma vez.
-Toda release precisa conter o zip `LiveHub-<versao>-windows.zip` e o `.zip.sha256` gerado pelo `build.ps1`.
+Toda release precisa conter tres arquivos gerados pelo `build.ps1`: o zip `LiveHub-<versao>-windows.zip`, o `.zip.sha256` e o `.zip.sig`
+(assinatura Ed25519; sem ela o app recusa a atualizacao). `build.ps1 -SemAssinatura` e so para testes locais: nunca publique esse build.
+A chave privada fica em `%USERPROFILE%\.livehub-keys\release_ed25519.pem` (so neste PC; faca backup offline, nunca commite).
+A publica esta em `livehub/atualizacao.py` (`CHAVE_PUBLICA`). Se a privada for perdida, o auto-update para: gere nova chave
+(`tools/gerar_chave.py`), troque `CHAVE_PUBLICA` e os usuarios precisam reinstalar manualmente uma vez.
 
 ## Alertas
 

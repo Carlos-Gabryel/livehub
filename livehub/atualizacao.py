@@ -1,6 +1,7 @@
 """Auto-update via GitHub Releases: verifica, baixa, confere SHA-256, prepara e aplica (ps1 fora da pasta de instalacao)."""
-import asyncio, hashlib, logging, os, shutil, subprocess, sys
+import asyncio, base64, hashlib, logging, os, shutil, subprocess, sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import aiohttp
 from aiohttp import web
@@ -10,6 +11,9 @@ from .web import seguro
 
 log = logging.getLogger("atualizacao")
 URL_PADRAO = "https://api.github.com/repos/Carlos-Gabryel/livehub/releases/latest"
+URL_RELEASES = "https://github.com/Carlos-Gabryel/livehub/releases/latest"
+# chave publica Ed25519 (32 bytes, base64); a privada fica so no PC do dono (tools/gerar_chave.py)
+CHAVE_PUBLICA = "9nM7ZuYpuedWJqy1rnu1rNWgcZIHUp67lEbFwyWWOuI="
 PRIMEIRA_VERIFICACAO = 30
 INTERVALO = 6 * 3600
 EXE = "LiveHub.exe"
@@ -32,6 +36,28 @@ def versao_tupla(s):
 def mais_nova(remota, local) -> bool:
     r, l = versao_tupla(remota), versao_tupla(local)
     return r is not None and l is not None and r > l
+
+
+def host_permitido(url) -> bool:
+    """https + host do GitHub (api, github.com ou *.githubusercontent.com)."""
+    try:
+        u = urlsplit(str(url))
+        h = (u.hostname or "").lower()
+    except ValueError:
+        return False
+    return u.scheme == "https" and (h in ("api.github.com", "github.com") or h.endswith(".githubusercontent.com"))
+
+
+def verificar_assinatura(ver, sha_hex, sig_b64) -> bool:
+    """Confere a assinatura Ed25519 do manifesto 'livehub|<ver>|<sha256>' com CHAVE_PUBLICA."""
+    try:
+        from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+        pub = Ed25519PublicKey.from_public_bytes(base64.b64decode(CHAVE_PUBLICA, validate=True))
+        sig = base64.b64decode(str(sig_b64).strip(), validate=True)
+        pub.verify(sig, f"livehub|{ver}|{sha_hex}".encode())
+        return True
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def _frozen() -> bool:
@@ -64,6 +90,13 @@ def _sha_arquivo(p: Path) -> str:
         for b in iter(lambda: f.read(1 << 20), b""):
             h.update(b)
     return h.hexdigest()
+
+
+def _verificado(pasta: Path, ver) -> bool:
+    try:
+        return (pasta / "verificado.txt").read_text(encoding="utf-8").strip() == ver
+    except OSError:
+        return False
 
 
 def _extrair(zip_path: Path, destino: Path):
@@ -102,6 +135,15 @@ class Atualizador:
     def _url(self) -> str:
         return os.environ.get("LIVEHUB_UPDATE_URL") or URL_PADRAO
 
+    def _checar_host(self, url, r=None):
+        """Sem LIVEHUB_UPDATE_URL (producao): exige allowlist na url, na url final e em cada redirect."""
+        if os.environ.get("LIVEHUB_UPDATE_URL"):
+            return
+        urls = [url] + ([r.url] + [h.url for h in r.history] if r is not None else [])
+        for u in urls:
+            if not host_permitido(u):
+                raise ValueError(f"host nao permitido: {urlsplit(str(u)).hostname}")
+
     def _erro(self, msg):
         log.warning("atualizacao: %s", msg)
         self.s.update(estado="erro", erro=msg)
@@ -130,7 +172,9 @@ class Atualizador:
     async def _verificar(self):
         hdr = {"User-Agent": f"LiveHub/{__version__}", "Accept": "application/vnd.github+json"}
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=20), headers=hdr) as ses:
+            self._checar_host(self._url())
             async with ses.get(self._url()) as r:
+                self._checar_host(self._url(), r)
                 r.raise_for_status()
                 rel = await r.json(content_type=None)
         if not isinstance(rel, dict) or rel.get("draft") or rel.get("prerelease"):
@@ -139,8 +183,10 @@ class Atualizador:
         if not mais_nova(tag, __version__):
             return self._nada()
         ver = ".".join(map(str, versao_tupla(tag)))
-        self.s.update(disponivel=ver, notas=str(rel.get("body") or ""), erro="",
-                      url_release=str(rel.get("html_url") or ""))
+        url_rel = str(rel.get("html_url") or "")
+        if not url_rel.startswith("https://github.com/"):
+            url_rel = URL_RELEASES
+        self.s.update(disponivel=ver, notas=str(rel.get("body") or ""), erro="", url_release=url_rel)
         if not _frozen():
             self.s["estado"] = "dev"
             return
@@ -152,34 +198,49 @@ class Atualizador:
         ass = {a.get("name"): a.get("browser_download_url") for a in rel.get("assets") or [] if isinstance(a, dict)}
         if not ass.get(nome) or not ass.get(nome + ".sha256"):
             return self._erro(f"release {tag} sem {nome} ou .sha256")
+        if not ass.get(nome + ".sig"):
+            return self._erro("Atualização sem assinatura — baixe manualmente")
         pasta = update_dir() / ver
-        if (pasta / "staged" / "LiveHub" / EXE).is_file():
+        if (pasta / "staged" / "LiveHub" / EXE).is_file() and _verificado(pasta, ver):
             return self._pronto(ver)
         self.s["estado"] = "baixando"
-        await self._baixar(hdr, ver, pasta, nome, ass[nome], ass[nome + ".sha256"])
+        await self._baixar(hdr, ver, pasta, nome, ass[nome], ass[nome + ".sha256"], ass[nome + ".sig"])
 
-    async def _baixar(self, hdr, ver, pasta, nome, url_zip, url_sha):
+    async def _baixar(self, hdr, ver, pasta, nome, url_zip, url_sha, url_sig):
         shutil.rmtree(pasta, ignore_errors=True)
         pasta.mkdir(parents=True)
-        zp, shap = pasta / nome, pasta / (nome + ".sha256")
+        zp, shap, sigp = pasta / nome, pasta / (nome + ".sha256"), pasta / (nome + ".sig")
         try:
             async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=1800, connect=20, sock_read=60),
                                              headers=hdr) as ses:
+                for u in (url_sha, url_sig, url_zip):
+                    self._checar_host(u)
                 async with ses.get(url_sha) as r:
+                    self._checar_host(url_sha, r)
                     r.raise_for_status()
                     shap.write_bytes(await r.read())
+                async with ses.get(url_sig) as r:
+                    self._checar_host(url_sig, r)
+                    r.raise_for_status()
+                    sigp.write_bytes(await r.read())
                 async with ses.get(url_zip) as r:
+                    self._checar_host(url_zip, r)
                     r.raise_for_status()
                     with open(zp, "wb") as f:
                         async for b in r.content.iter_chunked(1 << 16):
                             f.write(b)
             partes = shap.read_text(encoding="utf-8", errors="replace").split()
             esperado = partes[0].lower() if partes else ""
-            if await asyncio.to_thread(_sha_arquivo, zp) != esperado:
+            real = await asyncio.to_thread(_sha_arquivo, zp)
+            if real != esperado:
                 shutil.rmtree(pasta, ignore_errors=True)
                 return self._erro("SHA-256 do download não confere; atualização descartada.")
+            if not verificar_assinatura(ver, real, sigp.read_text(encoding="ascii", errors="replace")):
+                shutil.rmtree(pasta, ignore_errors=True)
+                return self._erro("Assinatura inválida — atualização recusada")
             await asyncio.to_thread(_extrair, zp, pasta / "staged")
             zp.unlink(missing_ok=True)
+            (pasta / "verificado.txt").write_text(ver, encoding="utf-8")  # so apos assinatura valida
         except asyncio.CancelledError:
             raise
         except Exception as e:  # noqa: BLE001
@@ -218,8 +279,10 @@ class Atualizador:
         if not (_gravavel(inst) and _gravavel(inst.parent)):
             self.s["estado"] = "sem_permissao"
             return False
-        staged = update_dir() / self.s["disponivel"] / "staged" / "LiveHub"
-        if not (staged / EXE).is_file():
+        pasta = update_dir() / self.s["disponivel"]
+        staged = pasta / "staged" / "LiveHub"
+        if not (staged / EXE).is_file() or not _verificado(pasta, self.s["disponivel"]):
+            log.warning("instalacao recusada: versao nao verificada por assinatura")
             return False
         try:
             up = update_dir()
