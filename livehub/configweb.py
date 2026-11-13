@@ -5,6 +5,7 @@ from aiohttp import web
 
 from . import __version__, paths, settings
 from .alertas import regras as alertas_regras, servico as alertas_servico
+from .chat import livepix
 from .chat.kick import Kick
 from .resgates import audio
 from .web import WEB_PORT, seguro
@@ -256,6 +257,21 @@ def aplicar(body: dict, cfg: dict, sec: dict):
             raise Erro("streamelements.jwt", "Token inválido (sem espaços).")
         sec["streamelements"]["jwt"] = j.strip()
 
+    lp = _secao(body, "livepix")
+    if "intervalo" in lp:
+        cfg["livepix"]["intervalo"] = _inteiro("livepix.intervalo", lp["intervalo"], 5, 60,
+                                               "Use um valor entre 5 e 60 segundos.")
+    if lp.get("remover") is True:
+        sec["livepix"].update(client_id="", client_secret="")
+    else:
+        for k in ("client_id", "client_secret"):
+            v = lp.get(k)
+            if v is None or v == "":
+                continue  # vazio = manter
+            if not isinstance(v, str) or len(v.strip()) > 200 or re.search(r"\s", v.strip()):
+                raise Erro(f"livepix.{k}", "Valor inválido (sem espaços, máximo 200 caracteres).")
+            sec["livepix"][k] = v.strip()
+
     sb = _secao(body, "streamerbot_compat")
     if "enabled" in sb:
         if not isinstance(sb["enabled"], bool):
@@ -328,6 +344,7 @@ def estado(rt) -> dict:
                    "modo": tw["modo"], "login_expirado": bool(tw.get("login_expirado")),
                    "assinaturas": assin},
         "streamelements": {"has_jwt": bool(sec["streamelements"]["jwt"])},
+        "livepix": {"has_client_id": bool(sec["livepix"]["client_id"]), "has_secret": bool(sec["livepix"]["client_secret"])},
         "audio": {"saidas": saidas, "atual": cfg["audio"]["output_device"]},
         "sons_dir": str(paths.sons_dir()),
         "web_port": porta,
@@ -387,6 +404,31 @@ def add_routes(app: web.Application, rt):
         out["restart_required"] = cfg["web_port"] != rt.cfg["web_port"]
         out["kick"] = kick
         return web.json_response(out)
+
+    @r.post("/api/livepix/testar")
+    async def testar_livepix(req):
+        if not seguro(req):
+            return web.json_response({"erro": "Origem não permitida."}, status=403)
+        try:
+            b = await req.json()
+        except Exception:
+            return web.json_response({"erro": "JSON inválido."}, status=400)
+        b = b if isinstance(b, dict) else {}
+        sv = settings.load_secrets()["livepix"]
+        cid = str(b.get("client_id") or "").strip() or sv["client_id"]
+        cs = str(b.get("client_secret") or "").strip() or sv["client_secret"]
+        if not cid or not cs:
+            return web.json_response({"erro": "Preencha o Client ID e o Client Secret."}, status=400)
+        try:
+            n = await livepix.testar(rt.session, cid, cs)
+        except livepix.AuthInvalida:
+            return web.json_response({"erro": "Credenciais inválidas (confira o Client ID, o Client Secret e a permissão messages:read)."}, status=400)
+        except livepix.Limite as e:
+            return web.json_response({"erro": f"Limite de requisições do LivePix; tente de novo em {int(e.espera)} s."}, status=429)
+        except Exception as e:
+            log.warning("teste LivePix falhou: %r", e)
+            return web.json_response({"erro": "Não consegui falar com o LivePix. Verifique a internet e tente de novo."}, status=502)
+        return web.json_response({"ok": True, "mensagens": n})
 
     @r.get("/api/audio/saidas")
     async def saidas(req):

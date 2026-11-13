@@ -5,7 +5,7 @@ from .. import paths
 from ..web import origem_local, seguro
 
 log = logging.getLogger("dock")
-PLATAFORMAS = {"twitch", "youtube", "kick", "tiktok", "streamelements"}
+PLATAFORMAS = {"twitch", "youtube", "kick", "tiktok", "streamelements", "livepix"}
 
 
 def static_dir():

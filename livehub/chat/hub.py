@@ -14,7 +14,7 @@ class Hub:
         self._ids = collections.deque(maxlen=1000)
         self.sb_clients = {}  # ws -> {source: set(types)}
         self.status = {"twitch": "iniciando", "kick": "iniciando", "youtube": "aguardando", "tiktok": "aguardando",
-                       "streamelements": "sem token"}
+                       "streamelements": "sem token", "livepix": "sem credenciais"}
         self._seq = itertools.count(1)
 
     # ---- status ----

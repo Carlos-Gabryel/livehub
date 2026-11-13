@@ -14,7 +14,7 @@ from conftest import porta_livre  # noqa: E402
 from test_dispositivo import Fake, OK  # noqa: E402
 
 pytestmark = pytest.mark.e2e
-VIEWS = ["inicio", "twitch", "kick", "youtube", "tiktok", "streamelements", "sons", "aparencia", "alertas", "links", "avancado"]
+VIEWS = ["inicio", "twitch", "kick", "youtube", "tiktok", "streamelements", "livepix", "sons", "aparencia", "alertas", "links", "avancado"]
 
 
 def _plat(nome):
@@ -101,7 +101,7 @@ async def abrir(nav, app):
 async def test_config_carrega_sem_erros_e_navega(abrir, app):
     page = await abrir()
     await expect(page.locator("#v-inicio")).to_be_visible()
-    await expect(page.locator("#versao")).to_have_text("versão 0.3.0")
+    await expect(page.locator("#versao")).to_have_text("versão 0.3.1")
     for v in VIEWS:
         await page.click(f'.it[data-v="{v}"]')
         await expect(page.locator(f"#v-{v}")).to_be_visible()
@@ -121,7 +121,7 @@ async def test_deep_link_hash(abrir):
 
 async def test_inicio_status_e_checklist(abrir):
     page = await abrir()
-    await expect(page.locator("#pcards .card")).to_have_count(5)
+    await expect(page.locator("#pcards .card")).to_have_count(6)
     await expect(page.locator("#falta")).to_contain_text("Colocar os canais")
     await expect(page.locator("#falta")).to_contain_text("entrar com a Twitch")
     await expect(page.locator("#qu_dock")).to_contain_text("/dock")

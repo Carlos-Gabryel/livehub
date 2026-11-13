@@ -109,6 +109,16 @@ animacoes e quanto tempo a mensagem fica na tela. As mudancas valem na
 hora, sem precisar reiniciar.
 
 
+DOACOES DO LIVEPIX
+------------------
+Opcional: mostra as doacoes (Pix) do LivePix no feed e nos alertas.
+No painel do LivePix: Configuracoes > API > Nova Aplicacao, com a
+permissao messages:read. Copie o Client ID e o Client Secret para a
+secao "LivePix" das configuracoes e use "Testar conexao".
+ATENCAO: desative o widget de alertas do proprio LivePix no OBS, senao
+cada doacao aparece duas vezes.
+
+
 ALERTAS NA TELA (COM VOZ)
 ------------------------
 Mostra uma mensagem na live quando alguem segue, assina, presenteia subs,

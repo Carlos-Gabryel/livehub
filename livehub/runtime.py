@@ -10,6 +10,7 @@ from .atualizacao import Atualizador
 from .chat import dock, sbserver
 from .chat.hub import Hub
 from .chat.kick import Kick
+from .chat.livepix import LivePix
 from .chat.streamelements import StreamElements
 from .chat.tiktok import TikTok
 from .chat.twitch import Twitch
@@ -27,9 +28,11 @@ PLATAFORMAS = {
                                     or c["youtube"].get("video_id") or "").strip()),
     "tiktok": (TikTok, lambda c: (c["tiktok"].get("username") or "").strip()),
     "streamelements": (StreamElements, lambda c: (c["streamelements"].get("jwt") or "").strip()),
+    "livepix": (lambda c, hub, ses: LivePix(c["livepix"], c["livepix_sec"], hub, ses),
+                lambda c: (c["livepix_sec"]["client_id"] or "").strip() and (c["livepix_sec"]["client_secret"] or "").strip()),
 }
 SHUTDOWN_TIMEOUT = 2.0  # aiohttp: espera por handlers abertos (padrao 60 s)
-STATUS_INATIVO = {"streamelements": "sem token"}
+STATUS_INATIVO = {"streamelements": "sem token", "livepix": "sem credenciais"}
 
 
 async def supervisionar(nome, fabrica, base=2.0, teto=60.0):

@@ -70,6 +70,7 @@ textarea{width:100%;min-height:70px;border-radius:8px;border:1px solid #3a3a48;b
   <button type="button" class="it" data-v="youtube"><span class="sq" style="background:#ff3347"></span><span class="nm">YouTube</span><span class="dot" id="nd_youtube"></span></button>
   <button type="button" class="it" data-v="tiktok"><span class="sq" style="background:#25f4ee"></span><span class="nm">TikTok</span><span class="dot" id="nd_tiktok"></span></button>
   <button type="button" class="it" data-v="streamelements"><span class="sq" style="background:#4f8cff"></span><span class="nm">StreamElements</span><span class="dot" id="nd_streamelements"></span></button>
+  <button type="button" class="it" data-v="livepix"><span class="sq" style="background:#00d26a"></span><span class="nm">LivePix</span><span class="dot" id="nd_livepix"></span></button>
   <div class="grp">PERSONALIZAR</div>
   <button type="button" class="it" data-v="sons">Sons e recompensas</button>
   <button type="button" class="it" data-v="aparencia">Aparência do chat</button>
@@ -230,6 +231,28 @@ textarea{width:100%;min-height:70px;border-radius:8px;border:1px solid #3a3a48;b
   </div>
 </section>
 
+<!-- LIVEPIX -->
+<section class="view" id="v-livepix">
+  <h1>LivePix</h1>
+  <p class="sub">Opcional: mostra as doações (Pix) no feed e nos alertas.</p>
+  <div class="card">
+    <label for="lp_id">Client ID</label>
+    <input type="password" id="lp_id" autocomplete="new-password">
+    <label for="lp_sec">Client Secret</label>
+    <input type="password" id="lp_sec" autocomplete="new-password">
+    <label for="lp_i">Verificar a cada (segundos)</label>
+    <input type="number" id="lp_i" min="5" max="60">
+    <span class="mut" id="lp_estado"></span>
+    <label class="inl"><input type="checkbox" id="lp_rem"> Remover as credenciais salvas</label>
+    <div class="line"><span class="chip off" id="chip_livepix">...</span><span class="grow mut">Doações no feed</span>
+      <button type="button" class="btn" id="lp_btn" onclick="testarLivePix()">Testar conexão</button></div>
+    <span class="mut" id="lp_msg"></span>
+    <details><summary>Como fazer?</summary>
+      <p class="mut">No painel do LivePix: Configurações &rarr; API &rarr; Nova Aplicação, com a permissão messages:read. Copie o Client ID e o Client Secret aqui.</p></details>
+    <p class="mut"><b>Atenção:</b> desative o widget de alertas do próprio LivePix no OBS, senão cada doação aparece duas vezes.</p>
+  </div>
+</section>
+
 <!-- SONS -->
 <section class="view" id="v-sons">
   <h1>Sons e recompensas</h1>
@@ -359,10 +382,10 @@ textarea{width:100%;min-height:70px;border-radius:8px;border:1px solid #3a3a48;b
 <script>
 const $ = id => document.getElementById(id);
 let U = {}, ST = null, autoCanal = false, base = '';
-const SV = ['al_ativo','tw_canal','tw_id','tw_sec','kk_canal','kk_chat','kk_chan','yt_h','tt_u','yt_i','tt_i','se_jwt','se_rem','au_dev','a_port','sb_on','sb_port','up_ver','up_modo'];
-const VIEWS = ['inicio','twitch','kick','youtube','tiktok','streamelements','sons','aparencia','alertas','links','avancado'];
+const SV = ['al_ativo','tw_canal','tw_id','tw_sec','kk_canal','kk_chat','kk_chan','yt_h','tt_u','yt_i','tt_i','se_jwt','se_rem','lp_id','lp_sec','lp_i','lp_rem','au_dev','a_port','sb_on','sb_port','up_ver','up_modo'];
+const VIEWS = ['inicio','twitch','kick','youtube','tiktok','streamelements','livepix','sons','aparencia','alertas','links','avancado'];
 const ALIAS = {obs:'links', status:'inicio', resgates:'sons', ap:'aparencia'};
-const PLAT = [['twitch','Twitch','#9146ff'],['kick','Kick','#53fc18'],['youtube','YouTube','#ff3347'],['tiktok','TikTok','#25f4ee'],['streamelements','StreamElements','#4f8cff']];
+const PLAT = [['twitch','Twitch','#9146ff'],['kick','Kick','#53fc18'],['youtube','YouTube','#ff3347'],['tiktok','TikTok','#25f4ee'],['streamelements','StreamElements','#4f8cff'],['livepix','LivePix','#00d26a']];
 
 function toast(t, ok = true, ms = 3500) {
   const e = $('toast'); e.textContent = t; e.className = ok ? '' : 'bad'; e.hidden = false;
@@ -400,7 +423,8 @@ window.addEventListener('hashchange', () => mostrar(viewDoHash()));
 function classificar(v) {
   v = v || '';
   if (/^conectado/i.test(v)) return ['ok', 'Conectado'];
-  if (/inválido|invalido|erro|falha/i.test(v)) return ['bad', /inv/i.test(v) ? 'Token inválido' : 'Erro, tentando de novo'];
+  if (/inválid|invalid|erro|falha/i.test(v)) return ['bad', /credenciais/i.test(v) ? 'Credenciais inválidas' : /inv/i.test(v) ? 'Token inválido' : 'Erro, tentando de novo'];
+  if (/limite/i.test(v)) return ['wait', 'Limite de requisições'];
   if (/reconect/i.test(v)) return ['wait', 'Reconectando'];
   if (/aguardando|fora do ar|encerrada|ao vivo/i.test(v)) return ['wait', 'Aguardando a live'];
   return ['off', 'Desligado'];
@@ -411,6 +435,7 @@ function textoPlat(k, s, cls) {
   if (k === 'kick') return c.kick.channel ? 'Chat e eventos · ' + c.kick.channel : 'Coloque o canal';
   if (k === 'youtube') return c.youtube.handle ? (cls === 'wait' ? 'Conecta quando você entrar ao vivo' : 'Chat da live') : 'Coloque o @ do canal';
   if (k === 'tiktok') return c.tiktok.username ? (cls === 'wait' ? 'Conecta quando você entrar ao vivo' : 'Chat da live') : 'Coloque o usuário';
+  if (k === 'livepix') return s.livepix.has_client_id && s.livepix.has_secret ? 'Doações no feed' : 'Opcional: doações no feed';
   return s.streamelements.has_jwt ? 'Doações no feed' : 'Opcional: doações no feed';
 }
 function pintarStatus(s) {
@@ -498,6 +523,8 @@ function preencher(s) {
   $('yt_i').value = c.youtube.check_interval; $('tt_i').value = c.tiktok.check_interval;
   $('se_jwt').value = ''; $('se_jwt').placeholder = s.streamelements.has_jwt ? '•••• salvo' : '';
   $('se_rem').checked = false; $('se_estado').textContent = s.streamelements.has_jwt ? 'Há um token salvo. Deixe em branco para manter.' : 'Nenhum token salvo.';
+  const lp = s.livepix; $('lp_id').value = ''; $('lp_id').placeholder = lp.has_client_id ? '•••• salvo' : ''; $('lp_sec').value = ''; $('lp_sec').placeholder = lp.has_secret ? '•••• salvo' : '';
+  $('lp_i').value = c.livepix.intervalo; $('lp_rem').checked = false; $('lp_estado').textContent = lp.has_client_id && lp.has_secret ? 'Há credenciais salvas. Deixe em branco para manter.' : 'Nenhuma credencial salva.';
   $('up_ver').checked = c.atualizacao.verificar; $('up_modo').value = c.atualizacao.modo;
   $('a_port').value = c.web_port; $('sb_on').checked = c.streamerbot_compat.enabled; $('sb_port').value = c.streamerbot_compat.port;
   const sel = $('au_dev'); sel.innerHTML = '';
@@ -553,6 +580,7 @@ async function salvar() {
     kick:{channel:$('kk_canal').value},
     youtube:{handle:$('yt_h').value, check_interval:num('yt_i')}, tiktok:{username:$('tt_u').value, check_interval:num('tt_i')},
     streamelements:{jwt:$('se_jwt').value, remover:$('se_rem').checked},
+    livepix:{client_id:$('lp_id').value, client_secret:$('lp_sec').value, intervalo:num('lp_i'), remover:$('lp_rem').checked},
     streamerbot_compat:{enabled:$('sb_on').checked, port:num('sb_port')},
     atualizacao:{verificar:$('up_ver').checked, modo:$('up_modo').value},
     web_port:num('a_port'), audio:{output_device:$('au_dev').value}, alertas:alLer()
@@ -618,6 +646,12 @@ async function testarSom() {
   $('au_msg').textContent = 'Tocando...';
   const r = await api('/api/audio/testar', {device:$('au_dev').value});
   $('au_msg').textContent = r.ok ? 'Se você ouviu o bipe, está tudo certo.' : (r.j.erro || 'Erro.');
+}
+async function testarLivePix() {
+  $('lp_msg').textContent = 'Testando...'; $('lp_btn').disabled = true;
+  const r = await api('/api/livepix/testar', {client_id:$('lp_id').value, client_secret:$('lp_sec').value});
+  $('lp_btn').disabled = false;
+  $('lp_msg').textContent = r.ok ? 'Conexão ok. ' + r.j.mensagens + ' doação(ões) encontrada(s) na primeira página.' : (r.j.erro || 'Erro.');
 }
 async function abrirSons() { const r = await api('/api/abrir-sons', {}); if (!r.ok) $('au_msg').textContent = r.j.erro || 'Erro.'; }
 

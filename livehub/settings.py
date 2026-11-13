@@ -46,6 +46,7 @@ DEFAULT_CONFIG = {
     "kick": {"channel": "", "chatroom_id": None, "channel_id": None},
     "youtube": {"handle": "", "check_interval": 60},
     "tiktok": {"username": "", "check_interval": 60},
+    "livepix": {"intervalo": 8},
     "streamerbot_compat": {"enabled": False, "port": 8080},
     "web_port": 8782,
     "audio": {"output_device": ""},
@@ -58,6 +59,7 @@ DEFAULT_SECRETS = {
     "twitch": {"client_id": "", "client_secret": "", "access_token": "", "refresh_token": "",
                "expires_at": 0, "user_id": "", "login": "", "login_expirado": False},
     "streamelements": {"jwt": ""},
+    "livepix": {"client_id": "", "client_secret": ""},
 }
 
 
@@ -191,4 +193,5 @@ def runtime_config() -> dict:
                      "client_id": const.LIVEHUB_CLIENT_ID if disp else t["client_id"],
                      "client_secret": "" if disp else t["client_secret"]}
     cfg["streamelements"] = {"jwt": sec["streamelements"]["jwt"]}
+    cfg["livepix_sec"] = dict(sec["livepix"])
     return cfg
