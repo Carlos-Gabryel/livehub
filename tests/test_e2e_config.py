@@ -302,3 +302,33 @@ async def test_feed_tem_botao_repetir_so_para_eventos_de_alerta(abrir, app):
         await asyncio.sleep(0.05)
     assert len(app.alertas.fila) == 1
     assert page.erros == []
+
+
+async def test_livepix_salva_e_mostra_placeholders(abrir):
+    page = await abrir("/config")
+    await page.click('button[data-v="livepix"]')
+    await page.fill("#lp_id", "lp-id-e2e")
+    await page.fill("#lp_sec", "lp-sec-e2e")
+    await page.click("#btn_salvar")
+    await expect(page.locator("#barra")).to_be_hidden()
+    lp = settings.load_secrets()["livepix"]
+    assert lp["client_id"] == "lp-id-e2e" and lp["client_secret"] == "lp-sec-e2e"
+    await page.reload()
+    await page.click('button[data-v="livepix"]')
+    await expect(page.locator("#lp_id")).to_have_attribute("placeholder", "•••• salvo")
+    await expect(page.locator("#lp_sec")).to_have_attribute("placeholder", "•••• salvo")
+    assert page.erros == []
+
+
+async def test_livepix_remover_credenciais(abrir):
+    sec = settings.load_secrets()
+    sec["livepix"].update(client_id="a", client_secret="b")
+    settings.save_secrets(sec)
+    page = await abrir("/config")
+    await page.click('button[data-v="livepix"]')
+    await page.check("#lp_rem")
+    await page.click("#btn_salvar")
+    await expect(page.locator("#barra")).to_be_hidden()
+    lp = settings.load_secrets()["livepix"]
+    assert lp["client_id"] == "" and lp["client_secret"] == ""
+    assert page.erros == []

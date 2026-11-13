@@ -177,4 +177,5 @@ DESINSTALAR
 1. Na bandeja, desmarque "Iniciar com o Windows" e clique em "Sair".
 2. Apague a pasta onde extraiu o LiveHub.
 3. Apague tambem a pasta %APPDATA%\LiveHub (configuracoes, sons e log).
+   Seus tokens e chaves ficam criptografados com a protecao do Windows (so este usuario, neste PC, consegue le-los).
    Dica: cole %APPDATA% na barra do Explorador de Arquivos.

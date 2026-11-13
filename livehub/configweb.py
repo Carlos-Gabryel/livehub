@@ -353,6 +353,21 @@ def estado(rt) -> dict:
     }
 
 
+def _mudancas_segredos(antes: dict, depois: dict) -> list:
+    """Linhas de log sobre quais segredos mudaram (nunca valores nem tamanhos)."""
+    out = []
+    for sec, chaves in (("twitch", ("client_id", "client_secret")), ("streamelements", ("jwt",)), ("livepix", ("client_id", "client_secret"))):
+        a, d = antes[sec], depois[sec]
+        mud = [k for k in chaves if a.get(k) != d.get(k)]
+        if not mud:
+            continue
+        if all(not d.get(k) for k in mud):
+            out.append(f"{sec}: credenciais removidas")
+        else:
+            out.append(f"{sec}: " + ", ".join(f"{k} alterado" for k in mud))
+    return out
+
+
 def add_routes(app: web.Application, rt):
     app[RT] = rt
     r = web.RouteTableDef()
@@ -380,9 +395,11 @@ def add_routes(app: web.Application, rt):
         if not isinstance(body, dict):
             return web.json_response({"erro": "JSON inválido."}, status=400)
         cfg, sec = settings.load_config(), copy.deepcopy(settings.load_secrets())
+        antes = copy.deepcopy(sec)
         try:
             info = aplicar(body, cfg, sec)
         except Erro as e:
+            log.warning("config recusada: campo=%s erro=%s", e.campo, e.msg)
             return web.json_response({"campo": e.campo, "erro": e.msg}, status=400)
         kick = {"resolvido": None, "precisa_manual": False}
         k = cfg["kick"]
@@ -399,6 +416,9 @@ def add_routes(app: web.Application, rt):
         except OSError as e:
             log.warning("falha ao salvar: %r", type(e).__name__)
             return web.json_response({"erro": "Não consegui salvar as configurações."}, status=500)
+        log.info("config salva: %s", sorted(body))
+        for linha in _mudancas_segredos(antes, sec):
+            log.info(linha)
         await rt.reload()
         out = estado(rt)
         out["restart_required"] = cfg["web_port"] != rt.cfg["web_port"]

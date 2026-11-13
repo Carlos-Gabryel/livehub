@@ -1,8 +1,8 @@
 """config.json, secrets.json e mapeamento.json em data_dir(). Escrita atomica, sempre UTF-8."""
-import copy, json, logging, os, tempfile
+import base64, copy, json, logging, os, tempfile, time
 from pathlib import Path
 
-from . import paths
+from . import cofre, paths
 from .resgates import const
 
 log = logging.getLogger("settings")
@@ -164,8 +164,62 @@ def save_config(cfg: dict):
 MODOS_TWITCH = ("dispositivo", "app_proprio")
 
 
+FORMATO_SEGREDOS = "dpapi-v1"
+
+
+def _gravar_segredos(sec: dict):
+    if not cofre.disponivel():
+        atomic_write_json(secrets_path(), sec, 0o600)
+        return
+    cifrado = cofre.proteger(json.dumps(sec, ensure_ascii=False).encode("utf-8"))
+    atomic_write_json(secrets_path(), {"formato": FORMATO_SEGREDOS, "dados": base64.b64encode(cifrado).decode("ascii")}, 0o600)
+
+
+def _ler_segredos():
+    """dict de segredos, ou None (ausente / ilegivel). Migra arquivo antigo (texto puro) para cifrado."""
+    path = secrets_path()
+    try:
+        bruto = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(bruto, dict):
+            raise ValueError("raiz nao e um objeto")
+    except FileNotFoundError:
+        return None
+    except (ValueError, OSError):
+        log.error("secrets.json ilegivel; usando padroes")
+        _isolar_segredos()
+        return None
+    if bruto.get("formato") == FORMATO_SEGREDOS:
+        try:
+            dados = json.loads(cofre.abrir(base64.b64decode(bruto["dados"])).decode("utf-8"))
+            if not isinstance(dados, dict):
+                raise ValueError("raiz nao e um objeto")
+            return dados
+        except Exception as e:  # outro usuario/PC, arquivo corrompido: nunca apaga, so isola
+            log.error("nao consegui abrir secrets.json (%s); sera preciso entrar de novo", type(e).__name__)
+            _isolar_segredos()
+            return None
+    if cofre.disponivel():
+        try:
+            _gravar_segredos(deep_merge(DEFAULT_SECRETS, bruto))
+            log.info("segredos migrados para arquivo criptografado")
+        except OSError as e:
+            log.warning("falha ao migrar segredos: %r", type(e).__name__)
+    return bruto
+
+
+def _isolar_segredos():
+    path = secrets_path()
+    try:
+        os.replace(path, path.with_name(f"{path.name}.ilegivel-{time.strftime('%Y%m%d-%H%M%S')}"))
+    except OSError:
+        pass
+
+
 def load_secrets() -> dict:
-    sec = _load_with_defaults(secrets_path(), DEFAULT_SECRETS, 0o600)
+    d = _ler_segredos()
+    sec = deep_merge(DEFAULT_SECRETS, d or {})
+    if d is None:
+        _gravar_segredos(sec)
     t = sec["twitch"]
     if t.get("modo") not in MODOS_TWITCH:  # migracao: quem ja tinha app proprio continua nele
         t["modo"] = "app_proprio" if (t.get("client_id") and t.get("client_secret")) else "dispositivo"
@@ -173,7 +227,7 @@ def load_secrets() -> dict:
 
 
 def save_secrets(sec: dict):
-    atomic_write_json(secrets_path(), deep_merge(DEFAULT_SECRETS, sec), 0o600)
+    _gravar_segredos(deep_merge(DEFAULT_SECRETS, sec))
 
 
 def load_mapeamento() -> dict:

@@ -34,6 +34,7 @@ A primeira consulta so registra as doacoes antigas, sem alertar. Desative o widg
 
 Dados do usuario (config.json, secrets.json, mapeamento.json, sons/, livehub.log) ficam em
 `%APPDATA%\LiveHub` ou na pasta indicada por `LIVEHUB_DATA`.
+Tokens e chaves (secrets.json) ficam criptografados com a protecao do Windows (so este usuario, neste PC, consegue le-los).
 
 Rotas: `/dock`, `/neutro`, `/eventos`, `/recompensas`, `/status`, `/api/status`.
 Resgates: cada streamer cria o proprio app em dev.twitch.tv (redirect `http://localhost:3000/auth`) e
