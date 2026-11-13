@@ -22,7 +22,7 @@
   #bar .lpi { font:700 12px/16px system-ui; text-align:center; border-radius:3px; background:currentColor; } #bar .lpi { -webkit-text-fill-color:#000; }
   #bar a { flex:none; margin-left:auto; width:16px; height:16px; color:var(--mut); }
   #bar a svg { display:block; width:16px; height:16px; fill:currentColor; } #bar a:hover { color:var(--fg); }
-  #log { height:calc(100% - 28px); overflow-y:auto; padding:6px 0 84px; }
+  #log { height:calc(100% - 28px); overflow-y:auto; padding:6px 0 46px; }
   .m { display:flex; gap:6px; align-items:flex-start; padding:4px 10px 4px 8px; border-left:3px solid var(--c); word-break:break-word; }
   .m:hover { background:#1c1c21; }
   .tw { --c:var(--tw); } .yt { --c:var(--yt); } .kk { --c:var(--kk); } .tt { --c:var(--tt); } .se { --c:var(--se); } .lp { --c:var(--lp); }
@@ -34,22 +34,22 @@
   .t { color:var(--mut); }
   .v { color:#ffd33d; font-weight:700; }
   .d { display:block; font-size:12px; color:var(--mut); }
-  .rp { flex:none; align-self:flex-start; width:22px; height:22px; padding:0; border:0; border-radius:4px; background:none; color:var(--mut);
-    font:14px/22px system-ui; cursor:pointer; opacity:.4; }
-  .m:hover .rp, .rp:focus-visible { opacity:1; } .rp:hover:not(:disabled) { color:var(--fg); background:#26262c; }
-  .rp:disabled { cursor:default; opacity:.15; } .m:hover .rp:disabled { opacity:.25; }
+  .rp { flex:none; align-self:flex-start; width:24px; height:22px; padding:0; border:1px solid #4a4a55; border-radius:5px;
+    background:#23232a; color:#e6e6ee; font:700 14px/20px system-ui; cursor:pointer; }
+  .rp:hover:not(:disabled), .rp:focus-visible { color:#fff; background:#6d2fd6; border-color:#9b6bff; }
+  .rp:disabled { cursor:default; opacity:.2; }
   .rp.ok { color:#3ddc84; opacity:1; } .rp.err { color:#ff6369; opacity:1; }
   #ctl { position:fixed; left:0; right:0; bottom:0; z-index:5; padding:6px 8px; background:var(--panel); border-top:1px solid #26262c;
-    display:flex; flex-direction:column; gap:6px; }
-  #ctl .r2 { display:flex; gap:8px; align-items:center; }
-  #ctl button { font:600 13px/1.2 system-ui,"Segoe UI",sans-serif; min-height:30px; padding:4px 10px; border-radius:6px; cursor:pointer;
+    display:flex; gap:6px; align-items:center; }
+  #ctl .r2 { display:contents; }
+  #ctl button { font:600 12px/1.2 system-ui,"Segoe UI",sans-serif; min-height:26px; padding:3px 8px; border-radius:6px; cursor:pointer; white-space:nowrap;
     border:1px solid #3a3a42; background:#26262c; color:var(--fg); }
   #ctl button:hover:not(:disabled) { background:#2f2f37; }
   #ctl button:focus-visible { outline:2px solid #bf94ff; outline-offset:1px; }
   #ctl button:disabled { opacity:.55; cursor:default; }
-  #pausa { width:100%; }
-  #pular { flex:1; }
-  #fila { flex:none; color:var(--mut); font-size:12px; white-space:nowrap; }
+  #pausa, #pular { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; }
+  #pausa { flex:1.5; }
+  #fila { flex:none; color:var(--mut); font-size:11px; white-space:nowrap; }
   body.p #pausa { background:#f5a623; border-color:#ffc861; color:#1a1100; font-weight:800; letter-spacing:.2px; animation:pulso 1.6s ease-in-out infinite; }
   body.p #pausa:hover:not(:disabled) { background:#ffb84d; }
   body.p::after { content:""; position:fixed; inset:0; z-index:9; pointer-events:none; border:3px solid #f5a623; }
@@ -141,7 +141,7 @@ function pintar() {
   const p = $('pausa');
   document.body.classList.toggle('p', !!est.pausado);
   p.setAttribute('aria-pressed', est.pausado ? 'true' : 'false');
-  p.textContent = est.pausado ? '⏵ ALERTAS PAUSADOS — Retomar' : '⏸ Pausar alertas';
+  p.textContent = est.pausado ? '⏵ PAUSADO · Retomar' : '⏸ Pausar alertas';
   $('fila').textContent = 'fila: ' + (est.fila || 0);
   const resta = Math.ceil((bloqueioAte - Date.now()) / 1000), u = $('pular');
   if (resta > 0) { u.disabled = true; u.textContent = 'Aguarde ' + resta + 's…'; u.title = 'Aguarde para pular de novo'; }

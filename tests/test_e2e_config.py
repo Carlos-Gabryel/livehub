@@ -316,7 +316,7 @@ async def test_feed_barra_de_controles_pausa_e_pular(abrir, app):
     await expect(page.locator("#pausa")).to_have_attribute("aria-pressed", "false")
     await expect(page.locator("#pular")).to_be_disabled()  # sem alerta em exibicao
     await page.click("#pausa")
-    await expect(page.locator("#pausa")).to_have_text("⏵ ALERTAS PAUSADOS — Retomar")
+    await expect(page.locator("#pausa")).to_have_text("⏵ PAUSADO · Retomar")
     await expect(page.locator("#pausa")).to_have_attribute("aria-pressed", "true")
     await expect(page.locator("body")).to_have_class("p")
     assert app.alertas.pausado is True
