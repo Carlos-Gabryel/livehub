@@ -14,7 +14,8 @@ MANTER = 50
 TIMEOUT_NEURAL = 15
 TIMEOUT_WINDOWS = 20
 _NOWIN = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-PS = ["powershell", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command"]
+PS = [os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "WindowsPowerShell", "v1.0", "powershell.exe"),
+      "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command"]
 # O texto do usuario nunca entra no script: vai por variavel de ambiente.
 SCRIPT_FALA = ("$ErrorActionPreference='Stop';Add-Type -AssemblyName System.Speech;"
                "$s=New-Object System.Speech.Synthesis.SpeechSynthesizer;"
@@ -31,21 +32,25 @@ def tts_dir() -> Path:
     return p
 
 
-def preparar(texto, cfg, user="") -> str:
-    """Limpa o texto conforme a config; '' se nao sobrar nada para falar."""
-    t = texto or ""
+def _filtrar(t, cfg) -> str:
     if cfg.get("remover_links", True):
         t = LINK_RE.sub(" ", t)
     for p in cfg.get("palavras_bloqueadas") or []:
         p = (p or "").strip()
         if p:
             t = re.sub(r"(?<!\w)" + re.escape(p) + r"(?!\w)", " ", t, flags=re.I)
-    t = re.sub(r"\s+", " ", t).strip()
+    return re.sub(r"\s+", " ", t).strip()
+
+
+def preparar(texto, cfg, user="") -> str:
+    """Limpa o texto conforme a config; '' se nao sobrar nada para falar. O nome passa pelo mesmo filtro."""
+    t = _filtrar(texto or "", cfg)
     if not t:
         return ""
     t = t[:int(cfg.get("max_caracteres") or 200)].strip()
-    if cfg.get("ler_nome", True) and user:
-        t = f"{user} disse: {t}"
+    u = _filtrar(user or "", cfg)[:40].strip() if cfg.get("ler_nome", True) else ""
+    if u:
+        t = f"{u} disse: {t}"
     return t
 
 
@@ -70,7 +75,7 @@ async def _powershell(script, env_extra, timeout):
     kw = {"creationflags": _NOWIN} if sys.platform == "win32" else {}
     proc = await asyncio.create_subprocess_exec(*PS, script, stdin=asyncio.subprocess.DEVNULL,
                                                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
-                                                env=env, **kw)
+                                                env=env, cwd=str(paths.data_dir()), **kw)
     try:
         out, err = await asyncio.wait_for(proc.communicate(), timeout)
     except BaseException:

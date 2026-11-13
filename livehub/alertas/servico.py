@@ -71,6 +71,7 @@ class Alertas:
         self._task = None
         self._tts_tasks = set()
         self._vozes_win = None
+        self._tts_sem = asyncio.Semaphore(2)
 
     # ---- ciclo de vida ----
     def iniciar(self):
@@ -141,7 +142,8 @@ class Alertas:
     async def _fazer_tts(self, item, msg, user, cfg_tts):
         """O item ja esta na fila (ordem preservada); o worker espera o audio ficar pronto."""
         try:
-            p = await tts.gerar(msg, cfg_tts, user)
+            async with self._tts_sem:  # no maximo 2 geracoes ao mesmo tempo (fila FIFO mantem a ordem)
+                p = await tts.gerar(msg, cfg_tts, user)
             if p:
                 item["alerta"]["tts_url"] = "/alertas/tts/" + quote(p.name)
         except asyncio.CancelledError:
@@ -303,6 +305,8 @@ def add_routes(app: web.Application, rt):
 
     @r.get("/api/alertas/midia")
     async def midia(req):
+        if not origem_local(req) or req.headers.get("Sec-Fetch-Site", "same-origin") not in ("same-origin", "none"):
+            return web.Response(status=403)
         if svc._vozes_win is None:
             svc._vozes_win = await tts.vozes_windows()
         return web.json_response({"sons": listar_sons(), "imagens": listar_imagens(),
