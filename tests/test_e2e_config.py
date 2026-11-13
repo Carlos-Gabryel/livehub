@@ -1,5 +1,6 @@
 """End-to-end: roda o app de verdade e dirige as paginas no Microsoft Edge (Playwright). Sem rede real."""
 import asyncio
+import re
 
 import pytest
 from aiohttp import web
@@ -331,4 +332,87 @@ async def test_livepix_remover_credenciais(abrir):
     await expect(page.locator("#barra")).to_be_hidden()
     lp = settings.load_secrets()["livepix"]
     assert lp["client_id"] == "" and lp["client_secret"] == ""
+    assert page.erros == []
+
+
+async def test_nav_todas_as_views_sem_erros(abrir):
+    page = await abrir("/config")
+    for v in VIEWS:
+        await page.goto(page.url.split("#")[0] + "#" + v)
+        await expect(page.locator(f"#v-{v}")).to_be_visible()
+    await page.wait_for_timeout(300)
+    assert page.erros == []
+
+
+async def test_nav_grupo_plataformas_recolhe_e_persiste(abrir):
+    page = await abrir("/config")
+    tog = page.locator("#plat_tog")
+    await expect(tog).to_have_attribute("aria-expanded", "true")
+    await tog.click()
+    await expect(tog).to_have_attribute("aria-expanded", "false")
+    await expect(page.locator("#plat_sum")).to_be_visible()
+    await expect(page.locator("#plat_sum")).to_have_text(re.compile(r"^[0-6]/6$"))
+    await expect(page.locator('.it[data-v="twitch"]')).to_be_hidden()
+    await page.reload()
+    await expect(page.locator("#plat_tog")).to_have_attribute("aria-expanded", "false")
+    await page.goto(page.url.split("#")[0] + "#twitch")
+    await expect(page.locator("#plat_tog")).to_have_attribute("aria-expanded", "true")
+    await expect(page.locator('.it[data-v="twitch"]')).to_be_visible()
+    await page.locator("#plat_tog").click()
+    await page.locator("#plat_tog").click()
+    await expect(page.locator("#plat_tog")).to_have_attribute("aria-expanded", "true")
+    assert page.erros == []
+
+
+async def test_nav_submenu_alertas_e_scroll_tts(abrir):
+    page = await abrir("/config")
+    sub = page.locator('.smenu[data-for="alertas"]')
+    await expect(sub).to_be_hidden()
+    await page.click('.it[data-v="alertas"]')
+    await expect(sub).to_be_visible()
+    await page.click('.sit[data-view="alertas"][data-sec="tts"]')
+    assert page.url.endswith("#alertas/tts")
+    await expect(page.locator('.sit[data-sec="tts"]')).to_have_class("sit on")
+    await page.wait_for_timeout(1200)
+    box = await page.locator("#sec_al_tts").bounding_box()
+    assert 0 <= box["y"] < 900
+    await page.click('.it[data-v="links"]')
+    await expect(sub).to_be_hidden()
+    p2 = await abrir("/config#alertas/tts")
+    await expect(p2.locator("#v-alertas")).to_be_visible()
+    await p2.wait_for_timeout(1200)
+    assert 0 <= (await p2.locator("#sec_al_tts").bounding_box())["y"] < 900
+    assert page.erros == [] and p2.erros == []
+
+
+async def test_barra_sujo_indicador_e_ctrl_s(abrir):
+    page = await abrir("/config")
+    await expect(page.locator("#barra")).to_be_hidden()
+    await page.click('.it[data-v="youtube"]')
+    await page.fill("#yt_h", "@canalteste")
+    await expect(page.locator("#barra.dirty")).to_be_visible()
+    await expect(page.locator("#btn_salvar")).to_have_text("Salvar alterações")
+    await expect(page.locator('.it[data-v="youtube"] .ns')).to_be_visible()
+    await expect(page.locator('.it[data-v="kick"] .ns')).to_be_hidden()
+    await page.keyboard.press("Control+s")
+    await expect(page.locator("#barra")).to_be_hidden()
+    await expect(page.locator('.it[data-v="youtube"] .ns')).to_be_hidden()
+    assert settings.load_config()["youtube"]["handle"] == "canalteste"
+    assert page.erros == []
+
+
+async def test_livepix_teste_ok_mas_sujo_pede_salvar(abrir):
+    page = await abrir("/config")
+
+    async def fake(route):
+        await route.fulfill(json={"ok": True, "mensagens": 2})
+    await page.route("**/api/livepix/testar", fake)
+    await page.click('.it[data-v="livepix"]')
+    await page.fill("#lp_id", "x-id")
+    await page.fill("#lp_sec", "x-sec")
+    await page.click("#lp_btn")
+    await expect(page.locator("#lp_msg")).to_contain_text("falta salvar")
+    await page.click("#lp_msg button:has-text('Salvar agora')")
+    await expect(page.locator("#barra")).to_be_hidden()
+    assert settings.load_secrets()["livepix"]["client_id"] == "x-id"
     assert page.erros == []
