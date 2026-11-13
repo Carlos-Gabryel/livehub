@@ -109,6 +109,27 @@ animacoes e quanto tempo a mensagem fica na tela. As mudancas valem na
 hora, sem precisar reiniciar.
 
 
+ALERTAS NA TELA (COM VOZ)
+------------------------
+Mostra uma mensagem na live quando alguem segue, assina, presenteia subs,
+faz raid, manda bits/Kicks/Super Chat ou doa. Configure na pagina de
+configuracoes, secao "Alertas".
+1. No OBS: Fontes > + > Navegador, cole o link do overlay de alertas
+   (aparece na secao Alertas), largura 1920 e altura 1080, e marque
+   "Controlar audio pelo OBS".
+2. Sons: coloque .mp3/.wav/.ogg/.flac em %APPDATA%\LiveHub\sons.
+   Imagens: coloque .png/.jpg/.gif/.webp em %APPDATA%\LiveHub\imagens.
+   (Tambem ha atalhos na bandeja e na secao Alertas.)
+3. Cada tipo de alerta tem texto, som, imagem e duracao proprios.
+   Bits/Kicks/Super Chat e doacoes podem ter valor minimo (aproximado,
+   ignora a moeda) e leitura da mensagem em voz alta (TTS).
+4. TTS: "Neural" usa vozes da Microsoft e precisa de internet; se falhar,
+   usa automaticamente a voz do Windows (offline).
+5. O botao Testar de cada alerta mostra como fica; no feed de eventos, o
+   botao do alerta repete um evento. Os alertas so aparecem se houver um
+   overlay aberto (OBS ou a previa).
+
+
 DICAS E PROBLEMAS
 -----------------
 * Porta em uso: se outro programa ja usa a porta do LiveHub, ele avisa.

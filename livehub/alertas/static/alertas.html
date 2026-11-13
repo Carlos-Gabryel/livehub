@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Alertas</title>
+<style>
+  html,body { margin:0; height:100%; overflow:hidden; background:transparent; }
+  body.preview { background:repeating-conic-gradient(#8a8a8a 0 25%,#c8c8c8 0 50%) 0 0/20px 20px; }
+  #stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:4vw; box-sizing:border-box; }
+  #al { display:none; flex-direction:column; align-items:center; gap:.4em; text-align:center; max-width:92vw; font-weight:800; line-height:1.15; word-break:break-word; }
+  #al.on { display:flex; }
+  #al img { display:block; max-width:92vw; height:auto; }
+  #al .t { white-space:pre-wrap; }
+  #al .m { font-size:.6em; font-weight:600; max-width:80vw; }
+  @keyframes fade-in { from { opacity:0 } to { opacity:1 } }
+  @keyframes slide-in { from { opacity:0; transform:translateY(-80px) } to { opacity:1; transform:none } }
+  @keyframes pop-in { 0% { opacity:0; transform:scale(.3) } 70% { opacity:1; transform:scale(1.12) } 100% { opacity:1; transform:scale(1) } }
+  @keyframes bounce-in { 0% { opacity:0; transform:translateY(-240px) } 55% { opacity:1; transform:translateY(0) } 70% { transform:translateY(-40px) }
+    85% { transform:translateY(0) } 93% { transform:translateY(-12px) } 100% { transform:translateY(0) } }
+  @keyframes out { from { opacity:1; transform:none } to { opacity:0; transform:scale(.92) translateY(24px) } }
+  #al.in { animation-duration:.6s; animation-fill-mode:both; }
+  #al.in.fade { animation-name:fade-in } #al.in.slide { animation-name:slide-in }
+  #al.in.pop { animation-name:pop-in } #al.in.bounce { animation-name:bounce-in }
+  #al.out { animation:out .5s ease-in both; }
+</style>
+</head>
+<body>
+<div id="stage"><div id="al"></div></div>
+<script>
+const P = new URLSearchParams(location.search);
+if (P.get('preview') === '1') document.body.classList.add('preview');
+const al = document.getElementById('al');
+let ws = null, run = null;
+
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+function send(o) { try { if (ws && ws.readyState === 1) ws.send(JSON.stringify(o)); } catch (e) {} }
+
+function contorno(on) {
+  if (!on) return 'none';
+  const s = [];
+  for (const [x, y] of [[-2,-2],[2,-2],[-2,2],[2,2],[0,-3],[0,3],[-3,0],[3,0]]) s.push(x + 'px ' + y + 'px 0 #000');
+  return s.join(',') + ',0 0 10px rgba(0,0,0,.8)';
+}
+function aplicarEstilo(e) {
+  const f = e.fonte && e.fonte !== 'system-ui' ? '"' + e.fonte + '",system-ui,sans-serif' : 'system-ui,"Segoe UI",sans-serif';
+  al.style.fontFamily = f; al.style.fontSize = e.tamanho + 'px'; al.style.color = e.cor_texto;
+  al.style.textShadow = contorno(e.contorno);
+}
+function montar(a) {
+  const e = a.estilo; al.replaceChildren(); aplicarEstilo(e);
+  if (a.imagem_url) { const i = el('img'); i.style.width = e.imagem_largura + 'px'; i.src = a.imagem_url; i.alt = ''; al.append(i); }
+  const t = el('div', 't'), u = a.user || '', k = u ? a.texto.indexOf(u) : -1;
+  if (k < 0) t.textContent = a.texto;
+  else { const d = el('span', null, u); d.style.color = e.cor_destaque; t.append(document.createTextNode(a.texto.slice(0, k)), d, document.createTextNode(a.texto.slice(k + u.length))); }
+  al.append(t);
+  if (a.mensagem) al.append(el('div', 'm', a.mensagem));
+  al.className = 'on';
+  void al.offsetWidth;
+  al.className = 'on in ' + (['fade', 'slide', 'pop', 'bounce'].includes(e.animacao) ? e.animacao : 'pop');
+}
+
+// toca o audio e resolve quando termina (ou falha/bloqueia); cancelavel
+function tocar(r, url, vol) {
+  return new Promise(res => {
+    if (!url || r.stop) return res();
+    let a, ok = false;
+    const fim = () => { if (!ok) { ok = true; res(); } };
+    try {
+      a = new Audio(url); a.volume = Math.max(0, Math.min(1, vol / 100));
+      r.audios.push(a);
+      a.addEventListener('ended', fim); a.addEventListener('error', fim);
+      const p = a.play(); if (p && p.catch) p.catch(fim);
+    } catch (e) { return fim(); }
+    r.cancel.push(fim);
+    setTimeout(fim, 60000);
+  });
+}
+const espera = (r, ms) => new Promise(res => { const t = setTimeout(res, ms); r.cancel.push(() => { clearTimeout(t); res(); }); });
+
+async function alerta(a) {
+  if (run) encerrar(run, false);
+  const r = run = {id: a.id, stop: false, audios: [], cancel: []};
+  montar(a);
+  const duracao = espera(r, Math.max(2, a.duracao) * 1000);
+  const audio = (async () => { await tocar(r, a.som_url, a.volume); await tocar(r, a.tts_url, a.tts_volume == null ? 90 : a.tts_volume); })();
+  await Promise.all([duracao, audio]);
+  if (r.stop) return;
+  al.className = 'on out';
+  await espera(r, 500);
+  if (run === r) { al.className = ''; run = null; }
+  send({type: 'fim', id: r.id});
+}
+function encerrar(r, avisar) {
+  r.stop = true;
+  for (const a of r.audios) { try { a.pause(); } catch (e) {} }
+  for (const f of r.cancel) f();
+  if (run === r) { run = null; al.className = ''; al.replaceChildren(); }
+  if (avisar) send({type: 'fim', id: r.id});
+}
+
+function conectar() {
+  ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/alertas/ws');
+  ws.onmessage = ev => {
+    let d; try { d = JSON.parse(ev.data); } catch (e) { return; }
+    if (d.type === 'alerta' && d.alerta) alerta(d.alerta);
+    else if (d.type === 'pular' && run) encerrar(run, true);
+  };
+  ws.onclose = () => setTimeout(conectar, 2000);
+  ws.onerror = () => { try { ws.close(); } catch (e) {} };
+}
+conectar();
+</script>
+</body>
+</html>

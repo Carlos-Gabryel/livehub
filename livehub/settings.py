@@ -26,6 +26,21 @@ DEFAULT_APARENCIA = {
                "cor_nome_modo": "paleta", "cor_nome_fixa": "#1e1b3a", "espacamento": 4,
                "mostrar_icones": False, "mostrar_badges": False, "max": 15},
 }
+DEFAULT_ALERTAS = {
+    "ativo": True,
+    "estilo": {"fonte": "system-ui", "tamanho": 42, "cor_texto": "#ffffff", "cor_destaque": "#a970ff",
+               "contorno": True, "animacao": "pop", "imagem_largura": 300},
+    "categorias": {
+        "follow": {"ativo": True, "texto": "{user} seguiu!", "som": "", "volume": 80, "imagem": "", "duracao": 5, "minimo": 0, "tts": False},
+        "sub": {"ativo": True, "texto": "{user} assinou! {detalhe}", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": False},
+        "presente": {"ativo": True, "texto": "{user} presenteou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": False},
+        "raid": {"ativo": True, "texto": "{user} chegou com {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 8, "minimo": 0, "tts": False},
+        "cheer": {"ativo": True, "texto": "{user} mandou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": True},
+        "doacao": {"ativo": True, "texto": "{user} doou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 8, "minimo": 0, "tts": True},
+    },
+    "tts": {"motor": "neural", "voz_neural": "pt-BR-FranciscaNeural", "voz_windows": "", "volume": 90,
+            "minimo": 0, "max_caracteres": 200, "ler_nome": True, "remover_links": True, "palavras_bloqueadas": []},
+}
 DEFAULT_CONFIG = {
     "twitch": {"channel": ""},
     "kick": {"channel": "", "chatroom_id": None, "channel_id": None},
@@ -36,6 +51,7 @@ DEFAULT_CONFIG = {
     "audio": {"output_device": ""},
     "aparencia": DEFAULT_APARENCIA,
     "atualizacao": {"verificar": True, "modo": "avisar"},  # modo: "avisar" | "ao_sair"
+    "alertas": DEFAULT_ALERTAS,
     "settings_version": 1,
 }
 DEFAULT_SECRETS = {

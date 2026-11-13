@@ -33,6 +33,9 @@
   .t { color:var(--mut); }
   .v { color:#ffd33d; font-weight:700; }
   .d { display:block; font-size:12px; color:var(--mut); }
+  .rp { flex:none; align-self:flex-start; width:20px; height:20px; padding:0; border:0; border-radius:4px; background:none; color:var(--mut);
+    font:14px/20px system-ui; cursor:pointer; opacity:0; }
+  .m:hover .rp, .rp:focus-visible { opacity:1; } .rp:hover { color:var(--fg); background:#26262c; } .rp.ok { color:#3ddc84; opacity:1; }
   .h { flex:none; font-size:11px; color:var(--mut); margin-top:2px; }
   #empty { color:var(--mut); text-align:center; margin-top:30px; }
 </style>
@@ -48,6 +51,9 @@ const NOME = {twitch:'Twitch', youtube:'YouTube', kick:'Kick', tiktok:'TikTok', 
 const EMOJI = {'follow':'❤️', 'sub':'⭐', 'presente de sub':'🎁', 'bits':'💎', 'raid':'🚀', 'host':'🚀',
   'super chat':'💰', 'super sticker':'💰', 'membro':'🏅', 'presente de membro':'🏅', 'presente':'🎁',
   'assinatura':'⭐', 'kicks':'💚', 'doação':'💸', 'resgate':'🎟️'};
+// tipos que geram alerta (espelha livehub/alertas/regras.py)
+const ALERTA = new Set(['follow', 'sub', 'assinatura', 'membro', 'presente de sub', 'presente de membro', 'raid', 'host',
+  'bits', 'kicks', 'presente', 'super sticker', 'doação', 'super chat']);
 const MAX = 300;
 
 function hora(ts) { const d = new Date(ts * 1000); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
@@ -59,7 +65,18 @@ function render(m) {
   body.append(el('span', 'u', m.user || '?'), document.createTextNode(' '), el('span', 't', m.tipo || ''));
   if (m.valor) body.append(document.createTextNode(' '), el('span', 'v', m.valor));
   if (m.detalhe) body.append(el('span', 'd', m.detalhe));
-  row.append(el('div', 'ic', ICON[m.platform] || '?'), el('div', 'em', EMOJI[m.tipo] || '•'), body, el('div', 'h', hora(m.ts)));
+  row.append(el('div', 'ic', ICON[m.platform] || '?'), el('div', 'em', EMOJI[m.tipo] || '•'), body);
+  if (m.seq && ALERTA.has((m.tipo || '').toLowerCase())) {
+    const b = el('button', 'rp', '↻'); b.type = 'button'; b.title = 'Repetir alerta na tela'; b.setAttribute('aria-label', 'Repetir alerta na tela');
+    b.onclick = async () => {
+      try {
+        const r = await fetch('/api/alertas/repetir', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({seq: m.seq})});
+        if (r.ok) { b.classList.add('ok'); setTimeout(() => b.classList.remove('ok'), 1200); }
+      } catch (e) {}
+    };
+    row.append(b);
+  }
+  row.append(el('div', 'h', hora(m.ts)));
   return row;
 }
 

@@ -14,7 +14,7 @@ from conftest import porta_livre  # noqa: E402
 from test_dispositivo import Fake, OK  # noqa: E402
 
 pytestmark = pytest.mark.e2e
-VIEWS = ["inicio", "twitch", "kick", "youtube", "tiktok", "streamelements", "sons", "aparencia", "links", "avancado"]
+VIEWS = ["inicio", "twitch", "kick", "youtube", "tiktok", "streamelements", "sons", "aparencia", "alertas", "links", "avancado"]
 
 
 def _plat(nome):
@@ -101,7 +101,7 @@ async def abrir(nav, app):
 async def test_config_carrega_sem_erros_e_navega(abrir, app):
     page = await abrir()
     await expect(page.locator("#v-inicio")).to_be_visible()
-    await expect(page.locator("#versao")).to_have_text("versão 0.2.0")
+    await expect(page.locator("#versao")).to_have_text("versão 0.3.0")
     for v in VIEWS:
         await page.click(f'.it[data-v="{v}"]')
         await expect(page.locator(f"#v-{v}")).to_be_visible()
@@ -243,4 +243,62 @@ async def test_viewport_estreito_navegavel(abrir):
         await page.click(f'.it[data-v="{v}"]')
         await expect(page.locator(f"#v-{v}")).to_be_visible()
     assert await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+    assert page.erros == []
+
+
+async def test_overlay_de_alertas_mostra_e_confirma_fim(abrir, app):
+    app.cfg["alertas"]["categorias"]["follow"]["duracao"] = 2
+    page = await abrir("/alertas")
+    for _ in range(100):
+        if app.alertas.estado()["clientes"] == 1:
+            break
+        await asyncio.sleep(0.05)
+    assert app.alertas.estado()["clientes"] == 1
+    r = await page.evaluate("""() => fetch('/api/alertas/testar', {method: 'POST',
+        headers: {'Content-Type': 'application/json'}, body: JSON.stringify({categoria: 'follow'})}).then(r => r.status)""")
+    assert r == 200
+    await expect(page.locator("#al")).to_contain_text("Teste")
+    await expect(page.locator("#al")).to_contain_text("seguiu")
+    assert app.alertas.estado()["atual"] is not None
+    await expect(page.locator("#al")).not_to_be_visible(timeout=6000)  # animou para fora e mandou fim
+    for _ in range(40):
+        if app.alertas.estado()["atual"] is None:
+            break
+        await asyncio.sleep(0.05)
+    assert app.alertas.estado()["atual"] is None
+    assert page.erros == []
+
+
+async def test_config_alertas_renderiza_e_salva(abrir, app):
+    page = await abrir("/config#alertas")
+    await expect(page.locator("#v-alertas")).to_be_visible()
+    await expect(page.locator("#u_alertas")).to_have_text(app.url + "/alertas")
+    await expect(page.locator("#al_cats .card")).to_have_count(6)
+    campo = page.locator("#al_follow_texto")
+    await expect(campo).to_have_value("{user} seguiu!")
+    await campo.fill("{user} é novo por aqui!")
+    await page.locator("#al_e_animacao").select_option("bounce")
+    await expect(page.locator("#barra")).to_be_visible()
+    await page.click("#btn_salvar")
+    await expect(page.locator("#toast")).to_contain_text("Salvo")
+    c = settings.load_config()["alertas"]
+    assert c["categorias"]["follow"]["texto"] == "{user} é novo por aqui!" and c["estilo"]["animacao"] == "bounce"
+    await page.reload()
+    await expect(page.locator("#al_follow_texto")).to_have_value("{user} é novo por aqui!")
+    assert page.erros == []
+
+
+async def test_feed_tem_botao_repetir_so_para_eventos_de_alerta(abrir, app):
+    await app.hub.interacao("twitch", "follow", "Ana", id="e1")
+    await app.hub.interacao("twitch", "resgate", "Bia", "Hidratar", id="e2")
+    page = await abrir("/eventos")
+    await expect(page.locator(".m")).to_have_count(2)
+    await expect(page.locator(".rp")).to_have_count(1)
+    app.alertas.pausar()
+    await page.locator(".rp").click(force=True)
+    for _ in range(40):
+        if app.alertas.fila:
+            break
+        await asyncio.sleep(0.05)
+    assert len(app.alertas.fila) == 1
     assert page.erros == []

@@ -4,13 +4,14 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 datas = [
     ("livehub/static", "livehub/static"),
     ("livehub/chat/static", "livehub/chat/static"),
+    ("livehub/alertas/static", "livehub/alertas/static"),
     ("livehub/resgates/index.html", "livehub/resgates"),
     ("livehub/atualizacao_aplicar.ps1", "livehub"),
 ]
 binaries = []
 hiddenimports = ["pystray._win32", "engineio.async_drivers.aiohttp"]
 for pkg in ("TikTokLive", "betterproto", "socketio", "engineio", "sounddevice",
-            "_sounddevice_data", "soundfile", "_soundfile_data", "pystray", "PIL"):
+            "_sounddevice_data", "soundfile", "_soundfile_data", "pystray", "PIL", "edge_tts"):
     try:
         d, b, h = collect_all(pkg)
     except Exception:

@@ -4,6 +4,7 @@ import asyncio, copy, logging, os, re, sys
 from aiohttp import web
 
 from . import __version__, paths, settings
+from .alertas import regras as alertas_regras, servico as alertas_servico
 from .chat.kick import Kick
 from .resgates import audio
 from .web import WEB_PORT, seguro
@@ -77,6 +78,124 @@ def _secao(body, nome):
     if not isinstance(s, dict):
         raise Erro(nome, "Formato inválido.")
     return s
+
+
+HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+FONTE_RE = re.compile(r"^[A-Za-z0-9 _.\-]{1,60}$")
+VOZ_NEURAL_RE = re.compile(r"^[A-Za-z]{2,3}-[A-Za-z]{2,4}-[A-Za-z]+Neural$")
+ANIMACOES = ("fade", "slide", "pop", "bounce")
+
+
+def _bool(campo, v):
+    if not isinstance(v, bool):
+        raise Erro(campo, "Valor inválido.")
+    return v
+
+
+def _numero_min(campo, v):
+    if isinstance(v, bool) or not isinstance(v, (int, float, str)):
+        raise Erro(campo, "Use um número maior ou igual a 0.")
+    try:
+        n = float(str(v).strip().replace(",", "."))
+    except ValueError:
+        raise Erro(campo, "Use um número maior ou igual a 0.")
+    if not 0 <= n <= 1e9:
+        raise Erro(campo, "Use um número maior ou igual a 0.")
+    return int(n) if n == int(n) else n
+
+
+def _arquivo(campo, v, resolver):
+    if v is None:
+        v = ""
+    if not isinstance(v, str) or len(v) > 300:
+        raise Erro(campo, "Arquivo inválido.")
+    v = v.strip()
+    if v and resolver(v) is None:
+        raise Erro(campo, "Arquivo não encontrado na pasta.")
+    return v
+
+
+def _alertas(a: dict, cfg: dict):
+    al = cfg["alertas"]
+    if "ativo" in a:
+        al["ativo"] = _bool("alertas.ativo", a["ativo"])
+    e = _secao(a, "estilo")
+    est = al["estilo"]
+    if "fonte" in e:
+        if not isinstance(e["fonte"], str) or not (e["fonte"].strip() == "system-ui" or FONTE_RE.match(e["fonte"].strip())):
+            raise Erro("alertas.estilo.fonte", "Nome de fonte inválido.")
+        est["fonte"] = e["fonte"].strip()
+    if "tamanho" in e:
+        est["tamanho"] = _inteiro("alertas.estilo.tamanho", e["tamanho"], 12, 120, "Use um valor entre 12 e 120.")
+    if "imagem_largura" in e:
+        est["imagem_largura"] = _inteiro("alertas.estilo.imagem_largura", e["imagem_largura"], 40, 1600,
+                                         "Use um valor entre 40 e 1600.")
+    for k in ("cor_texto", "cor_destaque"):
+        if k in e:
+            if not isinstance(e[k], str) or not HEX_RE.match(e[k]):
+                raise Erro(f"alertas.estilo.{k}", "Cor inválida (use o formato #RRGGBB).")
+            est[k] = e[k].lower()
+    if "contorno" in e:
+        est["contorno"] = _bool("alertas.estilo.contorno", e["contorno"])
+    if "animacao" in e:
+        if e["animacao"] not in ANIMACOES:
+            raise Erro("alertas.estilo.animacao", "Opção inválida.")
+        est["animacao"] = e["animacao"]
+    cats = _secao(a, "categorias")
+    for nome, c in cats.items():
+        if nome not in alertas_regras.CATEGORIAS:
+            raise Erro(f"alertas.categorias.{nome}", "Categoria desconhecida.")
+        if not isinstance(c, dict):
+            raise Erro(f"alertas.categorias.{nome}", "Formato inválido.")
+        d, pre = al["categorias"][nome], f"alertas.categorias.{nome}."
+        for k in ("ativo", "tts"):
+            if k in c:
+                d[k] = _bool(pre + k, c[k])
+        if "texto" in c:
+            if not isinstance(c["texto"], str) or len(c["texto"].strip()) > 200 or not c["texto"].strip():
+                raise Erro(pre + "texto", "Escreva um texto de até 200 caracteres.")
+            d["texto"] = c["texto"].strip()
+        if "som" in c:
+            d["som"] = _arquivo(pre + "som", c["som"], alertas_servico.resolver_som)
+        if "imagem" in c:
+            d["imagem"] = _arquivo(pre + "imagem", c["imagem"], alertas_servico.resolver_imagem)
+        if "volume" in c:
+            d["volume"] = _inteiro(pre + "volume", c["volume"], 0, 100, "Use um valor entre 0 e 100.")
+        if "duracao" in c:
+            d["duracao"] = _inteiro(pre + "duracao", c["duracao"], 2, 30, "Use um valor entre 2 e 30 segundos.")
+        if "minimo" in c:
+            d["minimo"] = _numero_min(pre + "minimo", c["minimo"])
+    t = _secao(a, "tts")
+    d, pre = al["tts"], "alertas.tts."
+    if "motor" in t:
+        if t["motor"] not in ("neural", "windows"):
+            raise Erro(pre + "motor", "Opção inválida.")
+        d["motor"] = t["motor"]
+    if "voz_neural" in t:
+        if not isinstance(t["voz_neural"], str) or not VOZ_NEURAL_RE.match(t["voz_neural"].strip()):
+            raise Erro(pre + "voz_neural", "Voz inválida.")
+        d["voz_neural"] = t["voz_neural"].strip()
+    if "voz_windows" in t:
+        v = t["voz_windows"]
+        if v is None:
+            v = ""
+        if not isinstance(v, str) or len(v.strip()) > 200:
+            raise Erro(pre + "voz_windows", "Voz inválida.")
+        d["voz_windows"] = v.strip()
+    if "volume" in t:
+        d["volume"] = _inteiro(pre + "volume", t["volume"], 0, 100, "Use um valor entre 0 e 100.")
+    if "max_caracteres" in t:
+        d["max_caracteres"] = _inteiro(pre + "max_caracteres", t["max_caracteres"], 20, 500, "Use um valor entre 20 e 500.")
+    if "minimo" in t:
+        d["minimo"] = _numero_min(pre + "minimo", t["minimo"])
+    for k in ("ler_nome", "remover_links"):
+        if k in t:
+            d[k] = _bool(pre + k, t[k])
+    if "palavras_bloqueadas" in t:
+        pb = t["palavras_bloqueadas"]
+        if not isinstance(pb, list) or len(pb) > 200 or not all(isinstance(x, str) and len(x) <= 60 for x in pb):
+            raise Erro(pre + "palavras_bloqueadas", "Use até 200 palavras de até 60 caracteres.")
+        d["palavras_bloqueadas"] = [x.strip() for x in pb if x.strip()]
 
 
 def aplicar(body: dict, cfg: dict, sec: dict):
@@ -160,6 +279,8 @@ def aplicar(body: dict, cfg: dict, sec: dict):
             raise Erro("atualizacao.modo", "Valor inválido.")
         cfg["atualizacao"]["modo"] = at["modo"]
 
+    _alertas(_secao(body, "alertas"), cfg)
+
     a = _secao(body, "audio")
     if "output_device" in a:
         dev = a["output_device"]
@@ -183,7 +304,7 @@ async def resolver_kick(rt, slug):
 def urls(porta):
     b = f"http://127.0.0.1:{porta}"
     return {"dock": b + "/dock", "eventos": b + "/eventos", "neutro": b + "/neutro",
-            "recompensas": b + "/recompensas"}
+            "recompensas": b + "/recompensas", "alertas": b + "/alertas"}
 
 
 def estado(rt) -> dict:

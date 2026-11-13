@@ -8,6 +8,13 @@ Processo unico, uma pagina web em `http://127.0.0.1:8782/` (porta em `config.jso
 A partir da 0.2.0 o LiveHub se atualiza sozinho (GitHub Releases). Quem usa a 0.1.x instala a 0.2.0 manualmente uma vez.
 Toda release precisa conter o zip `LiveHub-<versao>-windows.zip` e o `.zip.sha256` gerado pelo `build.ps1`.
 
+## Alertas
+
+Overlay `/alertas` (fonte de navegador do OBS, 1920x1080, "Controlar audio pelo OBS") com fila, sons, imagens e TTS
+(`edge-tts` neural, com queda para SAPI do Windows). Configuracao na secao "Alertas" de `/config`; sons em
+`%APPDATA%\LiveHub\sons`, imagens em `%APPDATA%\LiveHub\imagens`. Sem overlay conectado os alertas sao descartados.
+O feed `/eventos` tem um botao para repetir o alerta de um evento.
+
 ## Desenvolvimento
 
     py -3.14 -m venv .venv

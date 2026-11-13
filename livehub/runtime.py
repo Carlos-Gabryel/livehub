@@ -4,6 +4,8 @@ import aiohttp
 from aiohttp import web
 
 from . import aparencia, atualizacao, configweb, paths, settings
+from .alertas import servico as alertas_servico
+from .alertas.servico import Alertas
 from .atualizacao import Atualizador
 from .chat import dock, sbserver
 from .chat.hub import Hub
@@ -61,6 +63,7 @@ class Runtime:
         self._lock = asyncio.Lock()
         self.supervisor_base = 2.0
         self.atualizador = Atualizador(self)
+        self.alertas = Alertas(self)
         self.pedir_saida = None  # setado pela bandeja: encerra o app como o menu Sair
 
     # ---- web ----
@@ -71,6 +74,7 @@ class Runtime:
         configweb.add_routes(app, self)
         atualizacao.add_routes(app, self)
         aparencia.add_routes(app, self)
+        alertas_servico.add_routes(app, self)
         servico.add_routes(app, self.svc)
         return app
 
@@ -83,6 +87,7 @@ class Runtime:
 
     async def _start(self):
         paths.sons_dir()  # garante data_dir()/sons
+        paths.imagens_dir()
         self.cfg = settings.runtime_config()
         self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=None, connect=15, sock_read=60))
         self.svc = servico.Servico(self.session, self.hub)
@@ -97,6 +102,7 @@ class Runtime:
             await self._sync_sb()
             self._start_tasks()
         self.atualizador.iniciar()
+        self.alertas.iniciar()
 
     # ---- plataformas ----
     def _start_tasks(self):
@@ -184,7 +190,7 @@ class Runtime:
 
     async def _fechar_ws(self):
         h = self.hub
-        todos = list(h.dock_clients) + list(h.feed_clients) + list(h.sb_clients)
+        todos = list(h.dock_clients) + list(h.feed_clients) + list(h.sb_clients) + list(self.alertas.clientes)
         if todos:
             await asyncio.gather(*(ws.close(code=1001, message=b"shutdown") for ws in todos),
                                  return_exceptions=True)
@@ -192,6 +198,7 @@ class Runtime:
     async def stop(self):
         """Encerramento limitado (~10 s no pior caso); nunca levanta."""
         await self._passo("atualizador", self.atualizador.parar(), 2)
+        await self._passo("alertas", self.alertas.parar(), 2)
         async def tarefas():
             async with self._lock:
                 await self._cancelar_tasks()

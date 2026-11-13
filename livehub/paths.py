@@ -28,5 +28,11 @@ def sons_dir() -> Path:
     return p
 
 
+def imagens_dir() -> Path:
+    p = data_dir() / "imagens"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
 def log_file() -> Path:
     return data_dir() / "livehub.log"

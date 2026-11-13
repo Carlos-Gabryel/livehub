@@ -6,3 +6,4 @@ soundfile==0.14.0
 numpy
 pystray==0.19.5
 Pillow==13.0.0
+edge-tts==7.3.1

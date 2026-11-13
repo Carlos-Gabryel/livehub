@@ -89,6 +89,9 @@ def run_tray(thread: RuntimeThread, base_url: str, abrir_config: bool):
     def pasta_sons(icon=None, item=None):
         os.startfile(paths.sons_dir())
 
+    def pasta_imagens(icon=None, item=None):
+        os.startfile(paths.imagens_dir())
+
     def ver_log(icon=None, item=None):
         os.startfile(paths.log_file())
 
@@ -137,7 +140,9 @@ def run_tray(thread: RuntimeThread, base_url: str, abrir_config: bool):
         pystray.MenuItem("Abrir chat", abrir("/dock")),
         pystray.MenuItem("Abrir feed", abrir("/eventos")),
         pystray.MenuItem("Abrir recompensas", abrir("/recompensas")),
+        pystray.MenuItem("Abrir alertas (overlay)", abrir("/alertas?preview=1")),
         pystray.MenuItem("Pasta de sons", pasta_sons),
+        pystray.MenuItem("Pasta de imagens", pasta_imagens),
         pystray.MenuItem("Ver log", ver_log),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Verificar atualizações", verificar),

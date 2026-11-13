@@ -10,6 +10,7 @@ class Hub:
         self.dock_clients = set()
         self.interacoes = collections.deque(maxlen=300)
         self.feed_clients = set()
+        self.ouvintes = []  # fn(ev) sincronas e leves, chamadas a cada interacao nova
         self._ids = collections.deque(maxlen=1000)
         self.sb_clients = {}  # ws -> {source: set(types)}
         self.status = {"twitch": "iniciando", "kick": "iniciando", "youtube": "aguardando", "tiktok": "aguardando",
@@ -35,6 +36,11 @@ class Hub:
         ev = {"platform": platform, "tipo": tipo, "user": user or "?", "detalhe": detalhe or "", "valor": valor or "",
               "id": id, "ts": time.time(), "seq": next(self._seq)}
         self.interacoes.append(ev)
+        for fn in list(self.ouvintes):
+            try:
+                fn(ev)
+            except Exception:  # noqa: BLE001
+                log.exception("ouvinte de interacao falhou")
         await self._feed({"type": "ev", "ev": ev})
         return ev
 
