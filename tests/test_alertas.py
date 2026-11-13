@@ -4,7 +4,7 @@ import aiohttp
 import pytest
 from yarl import URL
 
-from livehub import settings
+from livehub import paths, settings
 from livehub.alertas import regras, tts
 from livehub.alertas.servico import Alertas
 from livehub.chat.hub import Hub
@@ -427,3 +427,78 @@ async def test_config_alertas_validacao_e_persistencia(rt, data_dir):
                      {"tts": {"palavras_bloqueadas": "x"}}, {"ativo": "sim"}):
             st, j = await post(ruim)
             assert st == 400 and j["campo"].startswith("alertas"), ruim
+
+
+# ---------- controles do feed: pausa explicita, difusao, guarda do pular, repetir resgate ----------
+async def _pausar(s, rt, corpo):
+    async with s.post(f"{base(rt)}/api/alertas/pausar", json=corpo) as r:
+        return r.status, await r.json()
+
+
+async def test_pausar_explicito_idempotente_e_toggle(rt):
+    async with aiohttp.ClientSession() as s:
+        assert (await _pausar(s, rt, {"pausado": True}))[1]["pausado"] is True
+        assert (await _pausar(s, rt, {"pausado": True}))[1]["pausado"] is True
+        assert (await _pausar(s, rt, {"pausado": False}))[1]["pausado"] is False
+        assert (await _pausar(s, rt, {"pausado": False}))[1]["pausado"] is False
+        assert (await _pausar(s, rt, {}))[1]["pausado"] is True  # toggle (compat)
+        assert (await _pausar(s, rt, {}))[1]["pausado"] is False
+        assert (await _pausar(s, rt, {"pausado": "sim"}))[0] == 400
+        assert rt.alertas.pausado is False
+
+
+async def test_estado_e_difundido_no_ws_do_feed(rt):
+    async with aiohttp.ClientSession() as s:
+        ws = await s.ws_connect(base(rt) + "/eventos/ws")
+        await ws.receive_json()  # history
+        await _pausar(s, rt, {"pausado": True})
+        m = await asyncio.wait_for(ws.receive_json(), 3)
+        assert m["type"] == "alertas" and m["pausado"] is True and m["fila"] == 0 and m["atual"] is None
+        await rt.hub.interacao("twitch", "follow", "Ana", id="f1")  # entra na fila (pausado) -> fila 1
+        msgs = [await asyncio.wait_for(ws.receive_json(), 3) for _ in range(2)]
+        assert any(x["type"] == "alertas" and x["fila"] == 1 for x in msgs)
+
+
+async def test_pular_duas_vezes_em_3s_recusa_a_segunda(rt, monkeypatch):
+    from livehub.alertas import servico
+    t = [1000.0]
+    monkeypatch.setattr(servico.time, "monotonic", lambda: t[0])
+    async with aiohttp.ClientSession() as s:
+        async def pular():
+            async with s.post(f"{base(rt)}/api/alertas/pular", json={}) as r:
+                return r.status, await r.json()
+        assert await pular() == (200, {"ok": True})
+        t[0] += 2.9
+        assert await pular() == (429, {"ok": False, "motivo": "aguarde"})
+        t[0] += 0.2
+        assert await pular() == (200, {"ok": True})
+
+
+async def test_resgates_repetir(rt, monkeypatch):
+    (paths.sons_dir() / "boom.wav").write_bytes(b"x")
+    settings.save_mapeamento({"R1": {"titulo": "Boom", "som": "boom.wav", "volume": 40}})
+    tocados = []
+    monkeypatch.setattr(rt.svc.player, "enfileirar", lambda p, v, r="": tocados.append((str(p), v, r)))
+    await rt.svc.tratar_resgate({"id": "x1", "user_name": "Ana", "reward": {"id": "R1", "title": "Boom", "cost": 5}})
+    await rt.hub.interacao("twitch", "resgate", "Bia", "Boom", id="x2")  # sem reward_id guardado: casa pelo titulo
+    await rt.hub.interacao("twitch", "resgate", "Cia", "Outro", id="x3")  # sem mapeamento
+    assert len(tocados) == 1  # o resgate original tocou uma vez
+    seqs = [e["seq"] for e in rt.hub.interacoes]
+    hdr = {"Origin": "http://evil.example"}
+    async with aiohttp.ClientSession() as s:
+        url = base(rt) + "/api/resgates/repetir"
+        async with s.post(url, json={"seq": seqs[0]}, headers=hdr) as r:
+            assert r.status == 403
+        for seq in seqs[:2]:
+            async with s.post(url, json={"seq": seq}) as r:
+                assert r.status == 200 and (await r.json())["ok"] is True
+        assert len(tocados) == 3 and all(t[0].endswith("boom.wav") and t[1] == 40 for t in tocados)
+        async with s.post(url, json={"seq": seqs[2]}) as r:
+            assert r.status == 404 and "som" in (await r.json())["erro"]
+        async with s.post(url, json={"seq": 99999}) as r:
+            assert r.status == 404
+        async with s.post(url, json={"seq": "a"}) as r:
+            assert r.status == 400
+        async with s.post(url, data="{}", headers={"Content-Type": "text/plain"}) as r:
+            assert r.status in (403, 415)
+    assert len(tocados) == 3

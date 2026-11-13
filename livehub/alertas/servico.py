@@ -1,5 +1,5 @@
 """Fila de alertas + rotas (overlay /alertas, WS, midia, controles). Config lida ao vivo de rt.cfg."""
-import asyncio, collections, json, logging, os, sys, uuid
+import asyncio, collections, json, logging, os, sys, time, uuid
 from pathlib import Path
 from urllib.parse import quote
 
@@ -15,6 +15,7 @@ log = logging.getLogger("alertas")
 
 FILA_MAX = 50
 FILA_SEGUIDORES = 10  # acima disso, novos follows sao descartados (protecao contra bot de follow)
+PULAR_INTERVALO = 3  # s: ignora um segundo pular logo apos o anterior (cliques duplos / dois docks)
 EXTRA_TIMEOUT = 30  # folga alem da duracao (cobre o TTS)
 IMG_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".webp", ".apng"}
 AMOSTRAS = {
@@ -65,6 +66,8 @@ class Alertas:
         self.clientes = set()
         self.atual = None
         self.pausado = False
+        self._ultimo_pular = None
+        self._avisos = set()
         self.extra_timeout = EXTRA_TIMEOUT
         self._sinal = asyncio.Event()
         self._fim = asyncio.Event()
@@ -137,6 +140,7 @@ class Alertas:
         else:
             item["pronto"].set()
         self._sinal.set()
+        self._avisar()
         return True
 
     async def _fazer_tts(self, item, msg, user, cfg_tts):
@@ -154,14 +158,31 @@ class Alertas:
             item["pronto"].set()
 
     # ---- controles ----
-    def pausar(self) -> bool:
-        self.pausado = not self.pausado
+    def _avisar(self):
+        """Difunde o estado (pausa/fila/atual) para as paginas do feed; sem loop rodando nao faz nada."""
+        try:
+            t = asyncio.get_running_loop().create_task(self.rt.hub._feed({"type": "alertas", **self.estado()}))
+        except RuntimeError:
+            return
+        self._avisos.add(t)
+        t.add_done_callback(self._avisos.discard)
+
+    def pausar(self, valor=None) -> bool:
+        """valor None alterna; True/False define (idempotente)."""
+        self.pausado = (not self.pausado) if valor is None else bool(valor)
         self._sinal.set()
+        self._avisar()
         return self.pausado
 
-    async def pular(self):
+    async def pular(self) -> bool:
+        """False se o ultimo pular foi ha menos de PULAR_INTERVALO s."""
+        agora = time.monotonic()
+        if self._ultimo_pular is not None and agora - self._ultimo_pular < PULAR_INTERVALO:
+            return False
+        self._ultimo_pular = agora
         await self._enviar({"type": "pular"})
         self._fim.set()
+        return True
 
     def repetir(self, seq) -> bool:
         """KeyError se nao achou o evento; ValueError se o tipo nao gera alerta."""
@@ -233,6 +254,7 @@ class Alertas:
             return
         self.fila.popleft()
         a = self.atual = item["alerta"]
+        self._avisar()
         self._fim.clear()
         await self._enviar({"type": "alerta", "alerta": a})
         try:
@@ -240,6 +262,7 @@ class Alertas:
         except asyncio.TimeoutError:
             log.warning("alerta %s sem confirmacao; seguindo", a["id"])
         self.atual = None
+        self._avisar()
 
 
 def add_routes(app: web.Application, rt):
@@ -329,14 +352,19 @@ def add_routes(app: web.Application, rt):
     async def pular(req):
         if not seguro(req):
             return proibido()
-        await svc.pular()
+        if not await svc.pular():
+            return web.json_response({"ok": False, "motivo": "aguarde"}, status=429)
         return web.json_response({"ok": True})
 
     @r.post("/api/alertas/pausar")
     async def pausar(req):
         if not seguro(req):
             return proibido()
-        return web.json_response({"ok": True, "pausado": svc.pausar()})
+        b = await corpo(req)
+        v = b.get("pausado") if b else None
+        if v is not None and not isinstance(v, bool):
+            return web.json_response({"erro": "Valor inválido."}, status=400)
+        return web.json_response({"ok": True, "pausado": svc.pausar(v)})
 
     @r.post("/api/alertas/repetir")
     async def repetir(req):

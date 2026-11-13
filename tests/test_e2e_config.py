@@ -289,19 +289,64 @@ async def test_config_alertas_renderiza_e_salva(abrir, app):
     assert page.erros == []
 
 
-async def test_feed_tem_botao_repetir_so_para_eventos_de_alerta(abrir, app):
+async def test_feed_botao_repetir_em_todas_as_linhas(abrir, app):
     await app.hub.interacao("twitch", "follow", "Ana", id="e1")
     await app.hub.interacao("twitch", "resgate", "Bia", "Hidratar", id="e2")
+    await app.hub.interacao("twitch", "outro", "Cid", id="e3")
     page = await abrir("/eventos")
-    await expect(page.locator(".m")).to_have_count(2)
-    await expect(page.locator(".rp")).to_have_count(1)
-    app.alertas.pausar()
-    await page.locator(".rp").click(force=True)
+    await expect(page.locator(".m")).to_have_count(3)
+    await expect(page.locator(".rp")).to_have_count(3)
+    await expect(page.locator(".rp:disabled")).to_have_count(1)
+    await expect(page.locator(".rp:disabled")).to_have_attribute("title", "Nada para repetir")
+    await expect(page.locator(".rp:not(:disabled)").first).to_have_attribute("title", "Repetir")
+    app.alertas.pausar(True)
+    await page.locator(".m", has_text="Ana").locator(".rp").click(force=True)
     for _ in range(40):
         if app.alertas.fila:
             break
         await asyncio.sleep(0.05)
     assert len(app.alertas.fila) == 1
+    assert page.erros == []
+
+
+async def test_feed_barra_de_controles_pausa_e_pular(abrir, app):
+    page = await abrir("/eventos", 360)
+    await expect(page.locator("#ctl")).to_be_visible()
+    await expect(page.locator("#pausa")).to_have_text("⏸ Pausar alertas")
+    await expect(page.locator("#pausa")).to_have_attribute("aria-pressed", "false")
+    await expect(page.locator("#pular")).to_be_disabled()  # sem alerta em exibicao
+    await page.click("#pausa")
+    await expect(page.locator("#pausa")).to_have_text("⏵ ALERTAS PAUSADOS — Retomar")
+    await expect(page.locator("#pausa")).to_have_attribute("aria-pressed", "true")
+    await expect(page.locator("body")).to_have_class("p")
+    assert app.alertas.pausado is True
+    outra = await abrir("/config#alertas")  # segunda pagina reflete o estado
+    await expect(outra.locator("#al_pausar")).to_have_text("Retomar alertas")
+    await outra.click("#al_pausar")  # e desfaz pela config; o feed acompanha via WS
+    await expect(page.locator("#pausa")).to_have_text("⏸ Pausar alertas")
+    assert app.alertas.pausado is False
+    assert page.erros == [] and outra.erros == []
+
+
+async def test_feed_pular_com_contagem_regressiva(abrir, app):
+    app.alertas.atual = {"id": "a1", "texto": "x"}
+    app.alertas._avisar()
+    page = await abrir("/eventos", 360)
+    await expect(page.locator("#pular")).to_be_enabled()
+    await page.click("#pular")
+    await expect(page.locator("#pular")).to_be_disabled()
+    await expect(page.locator("#pular")).to_contain_text("Aguarde")
+    await page.wait_for_timeout(3500)
+    await expect(page.locator("#pular")).to_have_text("⏭ Pular alerta")
+    await expect(page.locator("#pular")).to_be_enabled()
+    assert page.erros == []
+
+
+async def test_config_pular_tem_guarda_de_3s(abrir, app):
+    page = await abrir("/config#alertas")
+    await page.click("#al_pular")
+    await expect(page.locator("#al_pular")).to_be_disabled()
+    await expect(page.locator("#al_pular")).to_contain_text("Aguarde")
     assert page.erros == []
 
 

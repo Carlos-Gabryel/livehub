@@ -19,10 +19,11 @@ class Servico:
         self.player = Player(lambda: settings.load_config()["audio"]["output_device"])
         self.eventsub = EventSub(self.auth, self.tratar_resgate, self.tratar_follow)
         self.resgates = collections.deque(maxlen=50)
+        self.seq_rid = collections.OrderedDict()  # seq do evento no feed -> reward_id (para repetir o som)
 
     async def _feed(self, **ev):
         try:
-            await self.hub.interacao(**ev)
+            return await self.hub.interacao(**ev)
         except Exception as e:  # o feed nunca derruba os resgates
             log.warning("Falha ao publicar no feed: %r", e)
 
@@ -48,8 +49,12 @@ class Servico:
         log.info("Resgate: '%s' por %s (reward_id=%s) -> %s", titulo, quem, rid, status)
         self.resgates.appendleft({"hora": time.strftime("%H:%M:%S"), "titulo": titulo, "usuario": quem,
                                   "reward_id": rid, "status": status})
-        await self._feed(platform="twitch", tipo="resgate", user=quem, detalhe=titulo,
-                         valor=f"{ev['reward'].get('cost', '')} pts", id=ev.get("id"))
+        fev = await self._feed(platform="twitch", tipo="resgate", user=quem, detalhe=titulo,
+                               valor=f"{ev['reward'].get('cost', '')} pts", id=ev.get("id"))
+        if fev:
+            self.seq_rid[fev["seq"]] = rid
+            while len(self.seq_rid) > 300:
+                self.seq_rid.popitem(last=False)
 
     async def eventsub_main(self):
         """Valida o token (guarda user_id/login) e roda o EventSub; fica ocioso enquanto nao logado."""
@@ -174,6 +179,31 @@ def add_routes(app: web.Application, svc: Servico):
         if not p:
             return web.json_response({"erro": "som inválido"}, status=400)
         svc.player.enfileirar(p, b.get("volume", 100), "teste")
+        return web.json_response({"ok": True})
+
+    @r.post("/api/resgates/repetir")
+    async def repetir(req):
+        if not seguro(req):
+            return _proibido()
+        try:
+            b = await req.json()
+        except Exception:
+            b = None
+        seq = b.get("seq") if isinstance(b, dict) else None
+        if isinstance(seq, bool) or not isinstance(seq, int):
+            return web.json_response({"erro": "Evento inválido."}, status=400)
+        ev = next((e for e in svc.hub.interacoes if e["seq"] == seq and e["tipo"] == "resgate"), None)
+        if ev is None:
+            return web.json_response({"erro": "Resgate não encontrado."}, status=404)
+        mapa = settings.load_mapeamento()
+        rid = svc.seq_rid.get(seq)
+        m = mapa.get(rid) if rid else None
+        if not m:  # sem id guardado (ex.: evento injetado): procura pelo titulo
+            m = next((v for v in mapa.values() if v.get("titulo") == ev["detalhe"] and v.get("som")), None)
+        p = sons.resolve_som(m["som"]) if m and m.get("som") else None
+        if not p:
+            return web.json_response({"erro": "Esse resgate não tem som configurado."}, status=404)
+        svc.player.enfileirar(p, m.get("volume", 100), f"{ev['detalhe']} ({ev['user']}) [repetir]")
         return web.json_response({"ok": True})
 
     @r.post("/api/parar")

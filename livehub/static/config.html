@@ -335,7 +335,7 @@ textarea{width:100%;min-height:70px;border-radius:8px;border:1px solid #3a3a48;b
       <div class="mut">Adicione como Fonte de Navegador no OBS (1920×1080) e marque "Controlar áudio pelo OBS".</div></div>
       <button type="button" class="btn" onclick="copiar(U.alertas,this)">Copiar</button></div>
     <label class="inl"><input type="checkbox" id="al_ativo"> Alertas ligados</label>
-    <div class="flex"><button type="button" class="btn" id="al_pausar" onclick="alPausar()">Pausar</button><button type="button" class="btn" onclick="alPular()">Pular alerta atual</button>
+    <div class="flex"><button type="button" class="btn" id="al_pausar" aria-pressed="false" onclick="alPausar()">Pausar alertas</button><button type="button" class="btn" id="al_pular" onclick="alPular()">Pular alerta atual</button>
       <span class="mut" id="al_estado" role="status"></span></div>
     <div class="mut">Prévia ao vivo (os testes abaixo aparecem aqui):</div>
     <div id="alprev"><iframe id="alframe" title="Prévia dos alertas"></iframe></div>
@@ -852,13 +852,27 @@ function alMostrou() {
   if (!alFrame) { alFrame = true; $('alframe').src = '/alertas?preview=1'; alMidia(); }
   alEstado();
 }
+let alPausado = false, alTick = null, alBloq = 0;
 async function alEstado() {
   const r = await api('/api/alertas/estado'); if (!r.ok) return;
-  $('al_pausar').textContent = r.j.pausado ? 'Retomar' : 'Pausar';
-  $('al_estado').textContent = (r.j.pausado ? 'Pausado. ' : '') + 'Na fila: ' + r.j.fila + ' · telas conectadas: ' + r.j.clientes;
+  alPausado = r.j.pausado;
+  const b = $('al_pausar'); b.textContent = alPausado ? 'Retomar alertas' : 'Pausar alertas'; b.setAttribute('aria-pressed', alPausado);
+  $('al_estado').textContent = (alPausado ? '⏸ ALERTAS PAUSADOS · ' : '') + 'Na fila: ' + r.j.fila + ' · telas conectadas: ' + r.j.clientes;
+  $('al_estado').style.color = alPausado ? '#f5a623' : '';
+  alPularPintar();
 }
-async function alPausar() { await api('/api/alertas/pausar', {}); alEstado(); }
-async function alPular() { await api('/api/alertas/pular', {}); alEstado(); }
+function alPularPintar() {
+  const resta = Math.ceil((alBloq - Date.now()) / 1000), u = $('al_pular');
+  if (resta > 0) { u.disabled = true; u.textContent = 'Aguarde ' + resta + 's…'; return; }
+  u.disabled = false; u.textContent = 'Pular alerta atual'; clearInterval(alTick); alTick = null;
+}
+async function alPausar() { await api('/api/alertas/pausar', {pausado: !alPausado}); alEstado(); }
+async function alPular() {
+  alBloq = Date.now() + 3000; if (!alTick) alTick = setInterval(alPularPintar, 250); alPularPintar();
+  await api('/api/alertas/pular', {}); alEstado();
+}
+// mantem o estado sincronizado com outras telas (dock do OBS) enquanto a aba Alertas esta aberta
+setInterval(() => { if ($('v-alertas').classList.contains('on') && !document.hidden) alEstado(); }, 3000);
 async function alTestar(cat, tts) {
   if (sujo() && !await salvar()) return;
   const r = await api('/api/alertas/testar', tts ? {categoria:cat, tts:true} : {categoria:cat});

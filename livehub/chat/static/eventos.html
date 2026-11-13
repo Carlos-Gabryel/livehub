@@ -7,7 +7,7 @@
 <style>
   :root { --bg:#0e0e10; --panel:#18181b; --fg:#efeff1; --mut:#898990; --tw:#9146ff; --yt:#ff3b3b; --kk:#53fc18; --tt:#25f4ee; --se:#f5a623; --lp:#00d26a; }
   * { box-sizing:border-box; }
-  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg);
+  html,body { margin:0; height:100%; overflow:hidden; background:var(--bg); color:var(--fg);
     font:14px/1.4 system-ui,"Segoe UI",Roboto,sans-serif; }
   #bar { display:flex; gap:12px; align-items:center; height:28px; padding:0 10px; background:var(--panel);
     color:var(--mut); border-bottom:1px solid #26262c; white-space:nowrap; }
@@ -22,7 +22,7 @@
   #bar .lpi { font:700 12px/16px system-ui; text-align:center; border-radius:3px; background:currentColor; } #bar .lpi { -webkit-text-fill-color:#000; }
   #bar a { flex:none; margin-left:auto; width:16px; height:16px; color:var(--mut); }
   #bar a svg { display:block; width:16px; height:16px; fill:currentColor; } #bar a:hover { color:var(--fg); }
-  #log { height:calc(100% - 28px); overflow-y:auto; padding:6px 0; }
+  #log { height:calc(100% - 28px); overflow-y:auto; padding:6px 0 84px; }
   .m { display:flex; gap:6px; align-items:flex-start; padding:4px 10px 4px 8px; border-left:3px solid var(--c); word-break:break-word; }
   .m:hover { background:#1c1c21; }
   .tw { --c:var(--tw); } .yt { --c:var(--yt); } .kk { --c:var(--kk); } .tt { --c:var(--tt); } .se { --c:var(--se); } .lp { --c:var(--lp); }
@@ -34,9 +34,27 @@
   .t { color:var(--mut); }
   .v { color:#ffd33d; font-weight:700; }
   .d { display:block; font-size:12px; color:var(--mut); }
-  .rp { flex:none; align-self:flex-start; width:20px; height:20px; padding:0; border:0; border-radius:4px; background:none; color:var(--mut);
-    font:14px/20px system-ui; cursor:pointer; opacity:0; }
-  .m:hover .rp, .rp:focus-visible { opacity:1; } .rp:hover { color:var(--fg); background:#26262c; } .rp.ok { color:#3ddc84; opacity:1; }
+  .rp { flex:none; align-self:flex-start; width:22px; height:22px; padding:0; border:0; border-radius:4px; background:none; color:var(--mut);
+    font:14px/22px system-ui; cursor:pointer; opacity:.4; }
+  .m:hover .rp, .rp:focus-visible { opacity:1; } .rp:hover:not(:disabled) { color:var(--fg); background:#26262c; }
+  .rp:disabled { cursor:default; opacity:.15; } .m:hover .rp:disabled { opacity:.25; }
+  .rp.ok { color:#3ddc84; opacity:1; } .rp.err { color:#ff6369; opacity:1; }
+  #ctl { position:fixed; left:0; right:0; bottom:0; z-index:5; padding:6px 8px; background:var(--panel); border-top:1px solid #26262c;
+    display:flex; flex-direction:column; gap:6px; }
+  #ctl .r2 { display:flex; gap:8px; align-items:center; }
+  #ctl button { font:600 13px/1.2 system-ui,"Segoe UI",sans-serif; min-height:30px; padding:4px 10px; border-radius:6px; cursor:pointer;
+    border:1px solid #3a3a42; background:#26262c; color:var(--fg); }
+  #ctl button:hover:not(:disabled) { background:#2f2f37; }
+  #ctl button:focus-visible { outline:2px solid #bf94ff; outline-offset:1px; }
+  #ctl button:disabled { opacity:.55; cursor:default; }
+  #pausa { width:100%; }
+  #pular { flex:1; }
+  #fila { flex:none; color:var(--mut); font-size:12px; white-space:nowrap; }
+  body.p #pausa { background:#f5a623; border-color:#ffc861; color:#1a1100; font-weight:800; letter-spacing:.2px; animation:pulso 1.6s ease-in-out infinite; }
+  body.p #pausa:hover:not(:disabled) { background:#ffb84d; }
+  body.p::after { content:""; position:fixed; inset:0; z-index:9; pointer-events:none; border:3px solid #f5a623; }
+  @keyframes pulso { 50% { box-shadow:0 0 0 3px rgba(245,166,35,.45); } }
+  @media (prefers-reduced-motion:reduce) { body.p #pausa { animation:none; } }
   .h { flex:none; font-size:11px; color:var(--mut); margin-top:2px; }
   #empty { color:var(--mut); text-align:center; margin-top:30px; }
 </style>
@@ -44,6 +62,10 @@
 <body>
 <div id="bar"><span id="s-twitch" class="tw" title="Twitch" aria-label="Twitch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg></span><span id="s-youtube" class="yt" title="YouTube" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></span><span id="s-kick" class="kk" title="Kick" aria-label="Kick"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z"/></svg></span><span id="s-tiktok" class="tt" title="TikTok" aria-label="TikTok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></span><span id="s-streamelements" class="se" title="StreamElements" aria-label="StreamElements"><i class="logo-se"></i></span><span id="s-livepix" class="lp" title="LivePix" aria-label="LivePix"><b class="lpi">P</b></span><a href="/eventos/config" target="_blank" title="Configurar StreamElements" aria-label="Configurar StreamElements"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg></a></div>
 <div id="log"><div id="empty">Aguardando interações...</div></div>
+<div id="ctl">
+  <button type="button" id="pausa" aria-pressed="false">⏸ Pausar alertas</button>
+  <div class="r2"><button type="button" id="pular" disabled title="Nenhum alerta em exibição">⏭ Pular alerta</button><span id="fila" role="status">fila: 0</span></div>
+</div>
 <script>
 const log = document.getElementById('log');
 const CLS = {twitch:'tw', youtube:'yt', kick:'kk', tiktok:'tt', streamelements:'se', livepix:'lp'};
@@ -60,6 +82,30 @@ const MAX = 300;
 function hora(ts) { const d = new Date(ts * 1000); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
+// repetir: alerta na tela, som do resgate ou nada
+function replayBtn(m) {
+  const t = (m.tipo || '').toLowerCase();
+  const url = ALERTA.has(t) ? '/api/alertas/repetir' : t === 'resgate' ? '/api/resgates/repetir' : null;
+  const b = el('button', 'rp', '↻'); b.type = 'button';
+  const dica = (txt) => { b.title = txt; b.setAttribute('aria-label', txt); };
+  if (!url) { b.disabled = true; dica('Nada para repetir'); return b; }
+  dica('Repetir');
+  let livre = true;
+  b.onclick = async () => {
+    if (!livre) return;
+    livre = false; setTimeout(() => livre = true, 1000);
+    let ok = false, erro = 'Falhou';
+    try {
+      const r = await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({seq: m.seq})});
+      const j = await r.json().catch(() => ({}));
+      ok = r.ok && j.ok !== false; if (!ok) erro = j.erro || (j.ok === false ? 'Fila cheia' : 'Falhou');
+    } catch (e) { erro = 'Sem conexão'; }
+    b.textContent = ok ? '✓' : '✗'; b.classList.add(ok ? 'ok' : 'err'); if (!ok) dica(erro);
+    setTimeout(() => { b.textContent = '↻'; b.classList.remove('ok', 'err'); dica('Repetir'); }, 1200);
+  };
+  return b;
+}
+
 function render(m) {
   const row = el('div', 'm ' + (CLS[m.platform] || ''));
   const body = el('div', 'body');
@@ -67,16 +113,7 @@ function render(m) {
   if (m.valor) body.append(document.createTextNode(' '), el('span', 'v', m.valor));
   if (m.detalhe) body.append(el('span', 'd', m.detalhe));
   row.append(el('div', 'ic', ICON[m.platform] || '?'), el('div', 'em', EMOJI[m.tipo] || '•'), body);
-  if (m.seq && ALERTA.has((m.tipo || '').toLowerCase())) {
-    const b = el('button', 'rp', '↻'); b.type = 'button'; b.title = 'Repetir alerta na tela'; b.setAttribute('aria-label', 'Repetir alerta na tela');
-    b.onclick = async () => {
-      try {
-        const r = await fetch('/api/alertas/repetir', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({seq: m.seq})});
-        if (r.ok) { b.classList.add('ok'); setTimeout(() => b.classList.remove('ok'), 1200); }
-      } catch (e) {}
-    };
-    row.append(b);
-  }
+  if (m.seq) row.append(replayBtn(m));
   row.append(el('div', 'h', hora(m.ts)));
   return row;
 }
@@ -95,13 +132,45 @@ function setStatus(st) {
   }
 }
 
+// ---- controles de alertas (estado vem do servidor e e difundido pelo WS) ----
+const $ = id => document.getElementById(id);
+let est = {pausado: false, fila: 0, atual: null}, bloqueioAte = 0, tick = null;
+const post = (u, c) => fetch(u, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(c || {})});
+
+function pintar() {
+  const p = $('pausa');
+  document.body.classList.toggle('p', !!est.pausado);
+  p.setAttribute('aria-pressed', est.pausado ? 'true' : 'false');
+  p.textContent = est.pausado ? '⏵ ALERTAS PAUSADOS — Retomar' : '⏸ Pausar alertas';
+  $('fila').textContent = 'fila: ' + (est.fila || 0);
+  const resta = Math.ceil((bloqueioAte - Date.now()) / 1000), u = $('pular');
+  if (resta > 0) { u.disabled = true; u.textContent = 'Aguarde ' + resta + 's…'; u.title = 'Aguarde para pular de novo'; }
+  else {
+    u.textContent = '⏭ Pular alerta'; u.disabled = !est.atual;
+    u.title = est.atual ? 'Pular o alerta em exibição' : 'Nenhum alerta em exibição';
+    if (tick) { clearInterval(tick); tick = null; }
+  }
+}
+function aplicar(e) { if (e) { est = {...est, ...e}; pintar(); } }
+function bloquear() { bloqueioAte = Date.now() + 3000; if (!tick) tick = setInterval(pintar, 250); pintar(); }
+async function carregarEstado() { try { aplicar(await (await fetch('/api/alertas/estado')).json()); } catch (e) {} }
+$('pausa').onclick = async () => {
+  try { const r = await post('/api/alertas/pausar', {pausado: !est.pausado}); const j = await r.json(); if (r.ok) aplicar({pausado: j.pausado}); } catch (e) {}
+};
+$('pular').onclick = async () => {
+  bloquear();
+  try { await post('/api/alertas/pular'); } catch (e) {}
+};
+pintar(); carregarEstado();
+
 function connect() {
   const ws = new WebSocket((location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/eventos/ws');
   ws.onmessage = ev => {
     const d = JSON.parse(ev.data);
-    if (d.type === 'history') { log.replaceChildren(); d.eventos.forEach(add); setStatus(d.status); }
+    if (d.type === 'history') { log.replaceChildren(); d.eventos.forEach(add); setStatus(d.status); carregarEstado(); }
     else if (d.type === 'ev') add(d.ev);
     else if (d.type === 'status') setStatus(d.status);
+    else if (d.type === 'alertas') aplicar({pausado: d.pausado, fila: d.fila, atual: d.atual});
   };
   ws.onclose = () => setTimeout(connect, 2000);
 }
