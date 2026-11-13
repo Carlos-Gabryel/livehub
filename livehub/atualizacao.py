@@ -92,6 +92,23 @@ def _sha_arquivo(p: Path) -> str:
     return h.hexdigest()
 
 
+POWERSHELL = os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32", "WindowsPowerShell", "v1.0",
+                          "powershell.exe")
+
+
+def lancar_powershell(ps1, args, cwd):
+    """Roda o .ps1 sem janela e independente do app (sobrevive ao os._exit do LiveHub).
+    NAO usar DETACHED_PROCESS: o powershell.exe sem console morre antes de executar o script (v0.3.0/0.3.1)."""
+    cmd = [POWERSHELL, "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", str(ps1), *args]
+    base = 0x00000200 | 0x08000000  # NEW_PROCESS_GROUP | NO_WINDOW
+    kw = dict(cwd=str(cwd), close_fds=True, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+              stderr=subprocess.DEVNULL)
+    try:  # sair do job do pai, se permitido (senao o job pode matar o filho junto)
+        return subprocess.Popen(cmd, creationflags=base | 0x01000000, **kw)  # BREAKAWAY_FROM_JOB
+    except OSError:
+        return subprocess.Popen(cmd, creationflags=base, **kw)
+
+
 def _verificado(pasta: Path, ver) -> bool:
     try:
         return (pasta / "verificado.txt").read_text(encoding="utf-8").strip() == ver
@@ -290,12 +307,8 @@ class Atualizador:
             shutil.copyfile(paths.resource_dir() / "atualizacao_aplicar.ps1", ps1)
             marker = up / "ok.txt"
             marker.unlink(missing_ok=True)
-            cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-WindowStyle", "Hidden",
-                   "-File", str(ps1), "-ProcId", str(os.getpid()), "-Install", str(inst),
-                   "-Staged", str(staged), "-Marker", str(marker), "-Log", str(up / "aplicar.log")]
-            flags = 0x00000008 | 0x00000200 | 0x08000000  # DETACHED | NEW_PROCESS_GROUP | NO_WINDOW
-            subprocess.Popen(cmd, creationflags=flags, cwd=str(paths.data_dir()), close_fds=True,
-                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            lancar_powershell(ps1, ["-ProcId", str(os.getpid()), "-Install", str(inst), "-Staged", str(staged),
+                                    "-Marker", str(marker), "-Log", str(up / "aplicar.log")], paths.data_dir())
             log.info("aplicador iniciado para %s", self.s["disponivel"])
             return True
         except Exception:  # noqa: BLE001

@@ -497,3 +497,23 @@ def test_assinar_roundtrip(tmp_path, monkeypatch):
     monkeypatch.setenv("LIVEHUB_SIGN_KEY", str(tmp_path / "nao.pem"))
     with pytest.raises(SystemExit):
         assinar.assinar(z, "1.2.3")
+
+
+# ---------- disparo real do aplicador (regressao 0.3.0/0.3.1: DETACHED_PROCESS impedia o powershell de rodar) ----------
+@pytest.mark.skipif(sys.platform != "win32", reason="so Windows")
+def test_lancar_powershell_executa_o_script(tmp_path):
+    import time
+    ps1, out = tmp_path / "t.ps1", tmp_path / "saida.txt"
+    ps1.write_text('param([string]$Out) Set-Content -LiteralPath $Out -Value "ok"', encoding="utf-8")
+    atualizacao.lancar_powershell(ps1, ["-Out", str(out)], tmp_path)
+    fim = time.time() + 20
+    while time.time() < fim and not out.exists():
+        time.sleep(0.2)
+    assert out.exists(), "o powershell lancado nao executou o script"
+
+
+def test_lancar_powershell_sem_detached(monkeypatch, tmp_path):
+    vistos = []
+    monkeypatch.setattr(atualizacao.subprocess, "Popen", lambda cmd, creationflags=0, **kw: vistos.append(creationflags))
+    atualizacao.lancar_powershell(tmp_path / "x.ps1", [], tmp_path)
+    assert vistos and not (vistos[0] & 0x00000008)

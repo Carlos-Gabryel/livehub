@@ -7,7 +7,7 @@ from aiohttp import web
 pytest.importorskip("playwright")
 from playwright.async_api import async_playwright, expect  # noqa: E402
 
-from livehub import runtime, settings  # noqa: E402
+from livehub import __version__, runtime, settings  # noqa: E402
 from livehub.resgates import audio, const  # noqa: E402
 from livehub.runtime import Runtime  # noqa: E402
 from conftest import porta_livre  # noqa: E402
@@ -101,7 +101,7 @@ async def abrir(nav, app):
 async def test_config_carrega_sem_erros_e_navega(abrir, app):
     page = await abrir()
     await expect(page.locator("#v-inicio")).to_be_visible()
-    await expect(page.locator("#versao")).to_have_text("versão 0.3.1")
+    await expect(page.locator("#versao")).to_have_text(f"versão {__version__}")
     for v in VIEWS:
         await page.click(f'.it[data-v="{v}"]')
         await expect(page.locator(f"#v-{v}")).to_be_visible()
