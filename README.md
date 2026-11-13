@@ -3,6 +3,11 @@
 Chat unificado (Twitch, Kick, YouTube, TikTok) + feed de interacoes + resgates de pontos da Twitch que tocam sons.
 Processo unico, uma pagina web em `http://127.0.0.1:8782/` (porta em `config.json`).
 
+## Atualizacoes
+
+A partir da 0.2.0 o LiveHub se atualiza sozinho (GitHub Releases). Quem usa a 0.1.x instala a 0.2.0 manualmente uma vez.
+Toda release precisa conter o zip `LiveHub-<versao>-windows.zip` e o `.zip.sha256` gerado pelo `build.ps1`.
+
 ## Desenvolvimento
 
     py -3.14 -m venv .venv

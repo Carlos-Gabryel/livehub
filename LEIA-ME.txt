@@ -128,6 +128,11 @@ DICAS E PROBLEMAS
 
 ATUALIZAR
 ---------
+A partir da versao 0.2.0 o LiveHub se atualiza sozinho: avisa quando ha
+versao nova e atualiza com um clique (Configuracoes). Quem usa a 0.1.x
+precisa instalar a 0.2.0 manualmente uma vez, como abaixo.
+
+Manualmente:
 Feche o LiveHub (bandeja > Sair), baixe a versao nova e substitua a
 pasta antiga pela nova. Suas configuracoes ficam em %APPDATA%\LiveHub e
 nao sao perdidas.

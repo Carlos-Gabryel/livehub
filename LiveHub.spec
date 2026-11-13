@@ -5,6 +5,7 @@ datas = [
     ("livehub/static", "livehub/static"),
     ("livehub/chat/static", "livehub/chat/static"),
     ("livehub/resgates/index.html", "livehub/resgates"),
+    ("livehub/atualizacao_aplicar.ps1", "livehub"),
 ]
 binaries = []
 hiddenimports = ["pystray._win32", "engineio.async_drivers.aiohttp"]

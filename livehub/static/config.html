@@ -72,6 +72,13 @@ main{flex:1;min-width:0;padding:32px 40px 110px;max-width:1060px}
 </nav>
 
 <main>
+<div class="aviso" id="up_banner" style="display:none">
+  <b id="up_tit"></b>
+  <details id="up_det" style="margin:6px 0"><summary>Novidades</summary><div id="up_notas" style="white-space:pre-wrap;margin-top:6px"></div></details>
+  <button type="button" class="btn pri" id="up_btn" onclick="instalarUpdate()">Atualizar agora</button>
+  <a id="up_link" href="#" target="_blank" rel="noopener" style="display:none">Baixar manualmente</a>
+  <span id="up_msg"></span>
+</div>
 <!-- INICIO -->
 <section class="view on" id="v-inicio">
   <h1>Início</h1>
@@ -273,6 +280,12 @@ main{flex:1;min-width:0;padding:32px 40px 110px;max-width:1060px}
   <h1>Avançado</h1>
   <p class="sub">Só mexa aqui se souber o que está fazendo.</p>
   <div class="card">
+    <h2>Atualizações</h2>
+    <label class="inl"><input type="checkbox" id="up_ver"> Verificar atualizações automaticamente</label>
+    <div class="fld"><label for="up_modo">Quando houver versão nova</label><select id="up_modo"><option value="avisar">Avisar e eu instalo</option><option value="ao_sair">Instalar sozinho quando eu sair</option></select></div>
+    <div class="line"><div class="grow"><span class="mut" id="up_atual">Versão atual: ...</span> <span class="mut" id="up_res"></span></div><button type="button" class="btn" id="up_chk" onclick="verificarUpdate()">Verificar agora</button></div>
+  </div>
+  <div class="card">
     <div class="fld"><label for="a_port">Porta do LiveHub</label><input type="number" id="a_port" min="1024" max="65535">
       <span class="mut" style="margin-top:6px">Mudar a porta só vale depois de reiniciar o LiveHub (e os links do OBS mudam).</span></div>
     <label class="inl"><input type="checkbox" id="sb_on"> Compatibilidade com Streamer.bot</label>
@@ -291,7 +304,7 @@ main{flex:1;min-width:0;padding:32px 40px 110px;max-width:1060px}
 <script>
 const $ = id => document.getElementById(id);
 let U = {}, ST = null, autoCanal = false, base = '';
-const SV = ['tw_canal','tw_id','tw_sec','kk_canal','kk_chat','kk_chan','yt_h','tt_u','yt_i','tt_i','se_jwt','se_rem','au_dev','a_port','sb_on','sb_port'];
+const SV = ['tw_canal','tw_id','tw_sec','kk_canal','kk_chat','kk_chan','yt_h','tt_u','yt_i','tt_i','se_jwt','se_rem','au_dev','a_port','sb_on','sb_port','up_ver','up_modo'];
 const VIEWS = ['inicio','twitch','kick','youtube','tiktok','streamelements','sons','aparencia','links','avancado'];
 const ALIAS = {obs:'links', status:'inicio', resgates:'sons', ap:'aparencia'};
 const PLAT = [['twitch','Twitch','#9146ff'],['kick','Kick','#53fc18'],['youtube','YouTube','#ff3347'],['tiktok','TikTok','#25f4ee'],['streamelements','StreamElements','#4f8cff']];
@@ -429,6 +442,7 @@ function preencher(s) {
   $('yt_i').value = c.youtube.check_interval; $('tt_i').value = c.tiktok.check_interval;
   $('se_jwt').value = ''; $('se_jwt').placeholder = s.streamelements.has_jwt ? '•••• salvo' : '';
   $('se_rem').checked = false; $('se_estado').textContent = s.streamelements.has_jwt ? 'Há um token salvo. Deixe em branco para manter.' : 'Nenhum token salvo.';
+  $('up_ver').checked = c.atualizacao.verificar; $('up_modo').value = c.atualizacao.modo;
   $('a_port').value = c.web_port; $('sb_on').checked = c.streamerbot_compat.enabled; $('sb_port').value = c.streamerbot_compat.port;
   const sel = $('au_dev'); sel.innerHTML = '';
   for (const n of ['', ...s.audio.saidas]) { const o = document.createElement('option'); o.value = n; o.textContent = n || 'Padrão do sistema'; sel.appendChild(o); }
@@ -438,8 +452,35 @@ function preencher(s) {
   $('kk_manual').style.display = 'none';
   marcarLimpo();
 }
+function pintarUpdate(u) {
+  $('up_atual').textContent = 'Versão atual: ' + u.atual;
+  const b = $('up_banner'), tem = !!u.disponivel && ['pronto', 'sem_permissao', 'dev', 'erro'].includes(u.estado);
+  b.style.display = tem ? '' : 'none';
+  if (!tem) return;
+  $('up_tit').textContent = 'Nova versão ' + u.disponivel + ' disponível' + (u.estado === 'erro' ? ' (não consegui baixar: ' + u.erro + ')' : '');
+  $('up_notas').textContent = u.notas || '';
+  $('up_det').style.display = u.notas ? '' : 'none';
+  const auto = u.estado === 'pronto';
+  $('up_btn').style.display = auto ? '' : 'none';
+  $('up_link').style.display = auto ? 'none' : ''; $('up_link').href = u.url_release || '#';
+}
+async function atualizarUpdate() { const r = await api('/api/update'); if (r.ok) pintarUpdate(r.j); }
+async function verificarUpdate() {
+  $('up_chk').disabled = true; $('up_res').textContent = 'Verificando...';
+  const r = await api('/api/update/verificar', {}); $('up_chk').disabled = false;
+  if (!r.ok) { $('up_res').textContent = 'Falhou.'; return; }
+  pintarUpdate(r.j);
+  $('up_res').textContent = r.j.disponivel ? '— versão ' + r.j.disponivel + ' disponível' : r.j.estado === 'erro' ? '— ' + r.j.erro : '— você está na versão mais recente';
+}
+async function instalarUpdate() {
+  $('up_btn').disabled = true;
+  const r = await api('/api/update/instalar', {});
+  if (r.ok && r.j.ok) { $('up_msg').textContent = 'Atualizando… o LiveHub vai reabrir sozinho'; return; }
+  $('up_btn').disabled = false; $('up_msg').textContent = 'Não foi possível instalar agora.'; atualizarUpdate();
+}
 async function atualizarStatus() {
   const r = await api('/api/config'); if (r.ok) { ST = r.j; pintarStatus(r.j); }
+  atualizarUpdate();
 }
 async function carregar() { const r = await api('/api/config'); if (r.ok) { ST = r.j; preencher(r.j); pintarStatus(r.j); } }
 async function descartar() { await carregar(); }
@@ -451,6 +492,7 @@ async function salvar() {
     youtube:{handle:$('yt_h').value, check_interval:num('yt_i')}, tiktok:{username:$('tt_u').value, check_interval:num('tt_i')},
     streamelements:{jwt:$('se_jwt').value, remover:$('se_rem').checked},
     streamerbot_compat:{enabled:$('sb_on').checked, port:num('sb_port')},
+    atualizacao:{verificar:$('up_ver').checked, modo:$('up_modo').value},
     web_port:num('a_port'), audio:{output_device:$('au_dev').value}
   };
   if ($('kk_manual').style.display !== 'none') { corpo.kick.chatroom_id = num('kk_chat'); corpo.kick.channel_id = num('kk_chan'); }

@@ -101,7 +101,7 @@ async def abrir(nav, app):
 async def test_config_carrega_sem_erros_e_navega(abrir, app):
     page = await abrir()
     await expect(page.locator("#v-inicio")).to_be_visible()
-    await expect(page.locator("#versao")).to_have_text("versão 0.1.4")
+    await expect(page.locator("#versao")).to_have_text("versão 0.2.0")
     for v in VIEWS:
         await page.click(f'.it[data-v="{v}"]')
         await expect(page.locator(f"#v-{v}")).to_be_visible()

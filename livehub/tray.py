@@ -33,6 +33,7 @@ class RuntimeThread(threading.Thread):
         self.ready = threading.Event()
         self.error = None
         self.loop = None
+        self.rt = None
         self._stop_ev = None
         self.on_death = None  # chamado se morrer com excecao
 
@@ -53,6 +54,8 @@ class RuntimeThread(threading.Thread):
         self._stop_ev = asyncio.Event()
         rt = Runtime()
         await rt.start()
+        self.rt = rt
+        rt.atualizador.marcar_ok()
         self.ready.set()
         try:
             await self._stop_ev.wait()
@@ -97,8 +100,37 @@ def run_tray(thread: RuntimeThread, base_url: str, abrir_config: bool):
         except OSError:
             log.exception("nao consegui alterar 'Iniciar com o Windows'")
 
+    def atu():
+        return thread.rt.atualizador if thread.rt else None
+
     def sair(icon, item):
+        a = atu()
+        if a and a._cfg().get("modo") == "ao_sair" and a.estado()["estado"] == "pronto":
+            a.preparar_instalacao()
         encerrar(icon, thread)
+
+    def sair_pedido():
+        # chamado da thread asyncio (rota /api/update/instalar): encerrar() faz join do runtime, entao roda em thread propria
+        threading.Thread(target=encerrar, args=(icon, thread), name="sair", daemon=True).start()
+
+    def verificar(icon, item):
+        def tarefa():
+            a = atu()
+            if not a or not thread.loop:
+                return
+            try:
+                e = asyncio.run_coroutine_threadsafe(a.verificar(), thread.loop).result(60)
+            except Exception:  # noqa: BLE001
+                log.exception("verificar atualizacoes")
+                return
+            if e["estado"] == "erro" and not e["disponivel"]:
+                msg = e["erro"] or "Não consegui verificar atualizações."
+            elif e["disponivel"]:
+                msg = f"Versão {e['disponivel']} disponível — abra as configurações para instalar"
+            else:
+                msg = f"Você está na versão mais recente ({e['atual']})"
+            icon.notify(msg, "LiveHub")
+        threading.Thread(target=tarefa, name="verificar-update", daemon=True).start()
 
     menu = pystray.Menu(
         pystray.MenuItem("Abrir configurações", abrir("/config"), default=True),
@@ -108,6 +140,7 @@ def run_tray(thread: RuntimeThread, base_url: str, abrir_config: bool):
         pystray.MenuItem("Pasta de sons", pasta_sons),
         pystray.MenuItem("Ver log", ver_log),
         pystray.Menu.SEPARATOR,
+        pystray.MenuItem("Verificar atualizações", verificar),
         pystray.MenuItem("Iniciar com o Windows", alternar_auto,
                          checked=lambda item: startup.autostart_enabled() if frozen else False,
                          enabled=frozen),
@@ -115,6 +148,11 @@ def run_tray(thread: RuntimeThread, base_url: str, abrir_config: bool):
     )
     icon = pystray.Icon("LiveHub", make_icon(64), "LiveHub", menu)
     thread.on_death = icon.stop
+    if thread.rt:
+        thread.rt.pedir_saida = sair_pedido
+        thread.rt.atualizador.on_pronto = lambda v: icon.notify(
+            f"LiveHub {v} disponível", "Abra as configurações para atualizar." if thread.rt.atualizador._cfg().get("modo") != "ao_sair"
+            else "Será instalada quando você sair do LiveHub.")
 
     def setup(ic):
         ic.visible = True

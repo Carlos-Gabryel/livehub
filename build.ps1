@@ -17,3 +17,7 @@ Copy-Item LEIA-ME.txt "dist\LiveHub\LEIA-ME.txt"
 $zip = "dist\LiveHub-$version-windows.zip"
 Compress-Archive -Path "dist\LiveHub" -DestinationPath $zip -Force
 "{0}  ({1:N1} MB)" -f $zip, ((Get-Item $zip).Length / 1MB)
+$hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+$line = "$hash  LiveHub-$version-windows.zip"
+[System.IO.File]::WriteAllText((Join-Path $PSScriptRoot "$zip.sha256"), $line + "`n", (New-Object System.Text.ASCIIEncoding))
+$line

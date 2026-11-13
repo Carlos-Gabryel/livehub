@@ -35,6 +35,8 @@ DEFAULT_CONFIG = {
     "web_port": 8782,
     "audio": {"output_device": ""},
     "aparencia": DEFAULT_APARENCIA,
+    "atualizacao": {"verificar": True, "modo": "avisar"},  # modo: "avisar" | "ao_sair"
+    "settings_version": 1,
 }
 DEFAULT_SECRETS = {
     "twitch": {"client_id": "", "client_secret": "", "access_token": "", "refresh_token": "",
@@ -110,8 +112,31 @@ def _load_with_defaults(path: Path, defaults: dict, mode=None) -> dict:
     return merged
 
 
+# Migracoes do config.json. Para mudar o formato no futuro: suba "settings_version" em DEFAULT_CONFIG
+# para N e registre aqui MIGRACOES[N] = fn(cfg) -> cfg (transforma o formato N-1 em N).
+# Rodam em ordem crescente, uma vez, so para arquivos com versao menor (sem a chave = 0).
+MIGRACOES: dict = {}
+
+
+def migrar(cfg: dict, v0: int) -> dict:
+    for n in sorted(k for k in MIGRACOES if k > v0):
+        cfg = MIGRACOES[n](cfg)
+    cfg["settings_version"] = max([DEFAULT_CONFIG["settings_version"], *MIGRACOES])
+    return cfg
+
+
 def load_config() -> dict:
-    return _load_with_defaults(config_path(), DEFAULT_CONFIG)
+    path = config_path()
+    bruto = _read_json(path)
+    cfg = _load_with_defaults(path, DEFAULT_CONFIG)
+    if bruto is None:  # arquivo novo ja nasce na versao atual
+        return cfg
+    v0 = bruto.get("settings_version", 0)
+    v0 = v0 if isinstance(v0, int) else 0
+    if v0 < cfg["settings_version"] or any(k > v0 for k in MIGRACOES):
+        cfg = migrar(cfg, v0)
+        atomic_write_json(path, cfg)
+    return cfg
 
 
 def save_config(cfg: dict):

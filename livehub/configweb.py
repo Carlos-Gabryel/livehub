@@ -150,6 +150,16 @@ def aplicar(body: dict, cfg: dict, sec: dict):
     if cfg["web_port"] == cfg["streamerbot_compat"]["port"]:
         raise Erro("streamerbot_compat.port", "A porta do Streamer.bot não pode ser igual à porta do LiveHub.")
 
+    at = _secao(body, "atualizacao")
+    if "verificar" in at:
+        if not isinstance(at["verificar"], bool):
+            raise Erro("atualizacao.verificar", "Valor inválido.")
+        cfg["atualizacao"]["verificar"] = at["verificar"]
+    if "modo" in at:
+        if at["modo"] not in ("avisar", "ao_sair"):
+            raise Erro("atualizacao.modo", "Valor inválido.")
+        cfg["atualizacao"]["modo"] = at["modo"]
+
     a = _secao(body, "audio")
     if "output_device" in a:
         dev = a["output_device"]

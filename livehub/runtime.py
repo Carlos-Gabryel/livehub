@@ -3,7 +3,8 @@ import asyncio, logging, time
 import aiohttp
 from aiohttp import web
 
-from . import aparencia, configweb, paths, settings
+from . import aparencia, atualizacao, configweb, paths, settings
+from .atualizacao import Atualizador
 from .chat import dock, sbserver
 from .chat.hub import Hub
 from .chat.kick import Kick
@@ -59,6 +60,8 @@ class Runtime:
         self._sb_key = None
         self._lock = asyncio.Lock()
         self.supervisor_base = 2.0
+        self.atualizador = Atualizador(self)
+        self.pedir_saida = None  # setado pela bandeja: encerra o app como o menu Sair
 
     # ---- web ----
     def make_web_app(self) -> web.Application:
@@ -66,6 +69,7 @@ class Runtime:
         app[WEB_PORT] = self.cfg["web_port"]
         dock.add_routes(app, self.hub)
         configweb.add_routes(app, self)
+        atualizacao.add_routes(app, self)
         aparencia.add_routes(app, self)
         servico.add_routes(app, self.svc)
         return app
@@ -92,6 +96,7 @@ class Runtime:
         async with self._lock:
             await self._sync_sb()
             self._start_tasks()
+        self.atualizador.iniciar()
 
     # ---- plataformas ----
     def _start_tasks(self):
@@ -186,6 +191,7 @@ class Runtime:
 
     async def stop(self):
         """Encerramento limitado (~10 s no pior caso); nunca levanta."""
+        await self._passo("atualizador", self.atualizador.parar(), 2)
         async def tarefas():
             async with self._lock:
                 await self._cancelar_tasks()
