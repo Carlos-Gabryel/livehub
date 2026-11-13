@@ -35,8 +35,8 @@ DEFAULT_ALERTAS = {
         "sub": {"ativo": True, "texto": "{user} assinou! {detalhe}", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": False},
         "presente": {"ativo": True, "texto": "{user} presenteou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": False},
         "raid": {"ativo": True, "texto": "{user} chegou com {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 8, "minimo": 0, "tts": False},
-        "cheer": {"ativo": True, "texto": "{user} mandou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": True},
-        "doacao": {"ativo": True, "texto": "{user} doou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 8, "minimo": 0, "tts": True},
+        "cheer": {"ativo": True, "texto": "{user} mandou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": False},
+        "doacao": {"ativo": True, "texto": "{user} doou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 8, "minimo": 0, "tts": False},  # TTS opt-in: trolls pagam pouco para a live falar ofensa
     },
     "tts": {"motor": "neural", "voz_neural": "pt-BR-FranciscaNeural", "voz_windows": "", "volume": 90,
             "minimo": 0, "max_caracteres": 200, "ler_nome": True, "remover_links": True, "palavras_bloqueadas": []},

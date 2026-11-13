@@ -123,6 +123,9 @@ configuracoes, secao "Alertas".
 3. Cada tipo de alerta tem texto, som, imagem e duracao proprios.
    Bits/Kicks/Super Chat e doacoes podem ter valor minimo (aproximado,
    ignora a moeda) e leitura da mensagem em voz alta (TTS).
+   O TTS vem DESLIGADO: com minimo 0, qualquer um com 1 bit faz a live
+   falar xingamento. Antes de ligar, ponha um valor minimo e preencha as
+   palavras bloqueadas.
 4. TTS: "Neural" usa vozes da Microsoft e precisa de internet; se falhar,
    usa automaticamente a voz do Windows (offline).
 5. O botao Testar de cada alerta mostra como fica; no feed de eventos, o

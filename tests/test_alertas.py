@@ -155,6 +155,7 @@ async def svc():
     cfg = settings.load_config()
     for c in cfg["alertas"]["categorias"].values():
         c["duracao"] = 2
+    cfg["alertas"]["categorias"]["cheer"]["tts"] = True  # padrao e desligado (opt-in); os testes de TTS precisam dele
     rt = types.SimpleNamespace(hub=Hub(), cfg=cfg)
     s = Alertas(rt)
     rt.alertas = s
