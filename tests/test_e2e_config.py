@@ -461,3 +461,29 @@ async def test_livepix_teste_ok_mas_sujo_pede_salvar(abrir):
     await expect(page.locator("#barra")).to_be_hidden()
     assert settings.load_secrets()["livepix"]["client_id"] == "x-id"
     assert page.erros == []
+
+
+async def test_alertas_botao_unico_de_teste(abrir):
+    page = await abrir("/config#alertas")
+    chamadas = []
+
+    async def capturar(route):
+        chamadas.append(route.request.post_data_json)
+        await route.fulfill(json={"ok": True})
+    await page.route("**/api/alertas/testar", capturar)
+    assert await page.locator("#v-alertas [data-t]").count() == 0  # sem botoes de teste por categoria
+    assert await page.locator("#v-alertas #u_alertas").count() == 0  # link do overlay so em Links
+    lista = page.locator("#al_tlista")
+    await expect(lista).to_be_hidden()
+    await page.click("#al_tbtn")
+    await expect(lista).to_be_visible()
+    assert await lista.locator("button").count() == 7
+    await lista.locator("button", has_text="Seguidor novo").click()
+    await expect(lista).to_be_hidden()
+    await expect(page.locator("#al_tmsg")).to_contain_text("Teste enviado")
+    assert chamadas == [{"categoria": "follow"}]
+    await page.click("#al_tbtn")
+    await page.keyboard.press("Escape")
+    await expect(lista).to_be_hidden()
+    await page.click('.it[data-v="links"]')
+    await expect(page.locator("#v-links #u_alertas")).to_contain_text("/alertas")

@@ -1,11 +1,15 @@
-# LiveHub 0.3.3
+## Novidades
 
-## Segredos protegidos
+**Controles de alerta no feed do OBS** — no rodapé do feed de eventos (o dock do OBS):
+- **Pausar alertas**: fica laranja ("PAUSADO · Retomar") e o feed ganha uma borda laranja enquanto estiver pausado. O estado é o mesmo em todas as telas abertas.
+- **Pular alerta**: trava por 3 segundos depois do clique, para não pular dois sem querer.
+- **↻ Repetir** em cada evento: repete o alerta, ou toca de novo o som do resgate.
 
-- Tokens e chaves (Twitch, StreamElements e LivePix) agora ficam guardados criptografados com a protecao do Windows: so o seu usuario do Windows, neste PC, consegue le-los.
-- A migracao e automatica: na primeira abertura, o arquivo antigo e regravado criptografado, sem voce fazer nada.
-- Se copiar a pasta de dados para outro PC (ou outro usuario do Windows), sera preciso entrar de novo na Twitch e colar as chaves outra vez. O arquivo que nao puder ser lido e guardado como `secrets.json.ilegivel-<data>`, nunca apagado.
+**Configurações de cara nova**
+- Menu lateral com ícones, submenus (Alertas, Aparência, Avançado) e o grupo Plataformas que abre e fecha.
+- O botão de salvar ficou impossível de perder: barra roxa com "Salvar alterações", aviso de "não salvo" no menu e **Ctrl+S**.
+- Alertas: um único botão **Testar alerta** ao lado da prévia, com todos os tipos (e um teste com voz). O link do overlay agora fica em **Links para o OBS**, junto com os outros.
 
-## Diagnostico
+**Tokens e chaves protegidos** — Twitch, StreamElements e LivePix agora ficam guardados criptografados pelo Windows: só o seu usuário, neste PC, consegue ler. A conversão é automática. Se você copiar a pasta de dados para outro PC, vai precisar entrar na Twitch e colar as chaves de novo.
 
-- Ao salvar as configuracoes, o `livehub.log` registra quais secoes foram salvas e quais credenciais mudaram (sem nunca gravar os valores), e tambem o motivo quando uma configuracao e recusada.
+**Diagnóstico** — o `livehub.log` registra cada vez que você salva as configurações (o que mudou, nunca os valores).
