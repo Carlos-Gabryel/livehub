@@ -8,21 +8,41 @@
   html,body { margin:0; height:100%; overflow:hidden; background:transparent; }
   body.preview { background:repeating-conic-gradient(#8a8a8a 0 25%,#c8c8c8 0 50%) 0 0/20px 20px; }
   #stage { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; padding:4vw; box-sizing:border-box; }
-  #al { display:none; flex-direction:column; align-items:center; gap:.4em; text-align:center; max-width:92vw; font-weight:800; line-height:1.15; word-break:break-word; }
+  #al { display:none; flex-direction:column; align-items:center; justify-content:center; gap:.4em; text-align:center; max-width:92vw; font-weight:800; line-height:1.15; word-break:break-word; }
   #al.on { display:flex; }
-  #al img { display:block; max-width:92vw; height:auto; }
+  #al.p-acima { flex-direction:column-reverse; } #al.p-esquerda { flex-direction:row-reverse; } #al.p-direita { flex-direction:row; }
+  #al .midia { position:relative; display:block; max-width:92vw; }
+  #al .midia img, #al .midia video { display:block; max-width:92vw; height:auto; }
+  #al .txt { position:relative; }
+  #al .ti { position:relative; max-width:100%; }
+  #al.sobre .txt { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:.5em; box-sizing:border-box; }
+  #al.sobre.s-meio .txt { justify-content:center; } #al.sobre.s-base .txt { justify-content:flex-end; }
   #al .t { white-space:pre-wrap; }
   #al .m { font-size:.6em; font-weight:600; max-width:80vw; }
-  @keyframes fade-in { from { opacity:0 } to { opacity:1 } }
-  @keyframes slide-in { from { opacity:0; transform:translateY(-80px) } to { opacity:1; transform:none } }
-  @keyframes pop-in { 0% { opacity:0; transform:scale(.3) } 70% { opacity:1; transform:scale(1.12) } 100% { opacity:1; transform:scale(1) } }
-  @keyframes bounce-in { 0% { opacity:0; transform:translateY(-240px) } 55% { opacity:1; transform:translateY(0) } 70% { transform:translateY(-40px) }
+  @keyframes e-fade { from { opacity:0 } to { opacity:1 } }
+  @keyframes e-slide { from { opacity:0; transform:translateY(-80px) } to { opacity:1; transform:none } }
+  @keyframes e-pop { 0% { opacity:0; transform:scale(.3) } 70% { opacity:1; transform:scale(1.12) } 100% { opacity:1; transform:scale(1) } }
+  @keyframes e-bounce { 0% { opacity:0; transform:translateY(-240px) } 55% { opacity:1; transform:translateY(0) } 70% { transform:translateY(-40px) }
     85% { transform:translateY(0) } 93% { transform:translateY(-12px) } 100% { transform:translateY(0) } }
-  @keyframes out { from { opacity:1; transform:none } to { opacity:0; transform:scale(.92) translateY(24px) } }
-  #al.in { animation-duration:.6s; animation-fill-mode:both; }
-  #al.in.fade { animation-name:fade-in } #al.in.slide { animation-name:slide-in }
-  #al.in.pop { animation-name:pop-in } #al.in.bounce { animation-name:bounce-in }
-  #al.out { animation:out .5s ease-in both; }
+  @keyframes e-zoom { from { opacity:0; transform:scale(0) } to { opacity:1; transform:none } }
+  @keyframes e-esquerda { from { opacity:0; transform:translateX(-120vw) } to { opacity:1; transform:none } }
+  @keyframes e-direita { from { opacity:0; transform:translateX(120vw) } to { opacity:1; transform:none } }
+  @keyframes e-baixo { from { opacity:0; transform:translateY(120vh) } to { opacity:1; transform:none } }
+  @keyframes s-suave { from { opacity:1; transform:none } to { opacity:0; transform:scale(.92) translateY(24px) } }
+  @keyframes s-fade { from { opacity:1 } to { opacity:0 } }
+  @keyframes s-encolher { from { opacity:1; transform:none } to { opacity:0; transform:scale(0) } }
+  @keyframes s-cima { from { opacity:1; transform:none } to { opacity:0; transform:translateY(-120vh) } }
+  @keyframes s-baixo { from { opacity:1; transform:none } to { opacity:0; transform:translateY(120vh) } }
+  @keyframes s-esquerda { from { opacity:1; transform:none } to { opacity:0; transform:translateX(-120vw) } }
+  @keyframes s-direita { from { opacity:1; transform:none } to { opacity:0; transform:translateX(120vw) } }
+  .in { animation-duration:.6s; animation-fill-mode:both; }
+  .in-fade { animation-name:e-fade } .in-slide { animation-name:e-slide } .in-pop { animation-name:e-pop } .in-bounce { animation-name:e-bounce }
+  .in-zoom { animation-name:e-zoom } .in-esquerda { animation-name:e-esquerda } .in-direita { animation-name:e-direita } .in-baixo { animation-name:e-baixo }
+  .in-nenhuma { animation-name:e-fade; animation-duration:.01s; }
+  .out { animation-duration:.5s; animation-fill-mode:both; animation-timing-function:ease-in; animation-delay:0s !important; }
+  .out-suave { animation-name:s-suave } .out-fade { animation-name:s-fade } .out-encolher { animation-name:s-encolher } .out-cima { animation-name:s-cima }
+  .out-baixo { animation-name:s-baixo } .out-esquerda { animation-name:s-esquerda } .out-direita { animation-name:s-direita }
+  .out-nenhuma { animation:none !important; opacity:0; }
 </style>
 </head>
 <body>
@@ -47,17 +67,40 @@ function aplicarEstilo(e) {
   al.style.fontFamily = f; al.style.fontSize = e.tamanho + 'px'; al.style.color = e.cor_texto;
   al.style.textShadow = contorno(e.contorno);
 }
+const ENT = ['nenhuma', 'fade', 'slide', 'pop', 'bounce', 'zoom', 'esquerda', 'direita', 'baixo'];
+const SAI = ['nenhuma', 'suave', 'fade', 'encolher', 'cima', 'baixo', 'esquerda', 'direita'];
+const POS = ['abaixo', 'acima', 'esquerda', 'direita', 'sobre_topo', 'sobre_meio', 'sobre_base'];
+// monta midia e texto como blocos separados; devolve {video, midia, txt, saidas}
 function montar(a) {
   const e = a.estilo; al.replaceChildren(); aplicarEstilo(e);
-  if (a.imagem_url) { const i = el('img'); i.style.width = e.imagem_largura + 'px'; i.src = a.imagem_url; i.alt = ''; al.append(i); }
-  const t = el('div', 't'), u = a.user || '', k = u ? a.texto.indexOf(u) : -1;
+  let pos = POS.includes(e.posicao_texto) ? e.posicao_texto : 'abaixo', video = null, midia = null;
+  if (a.video_url) {
+    video = el('video'); video.playsInline = true; video.preload = 'auto'; video.src = a.video_url;
+    video.volume = Math.max(0, Math.min(1, (a.volume == null ? 100 : a.volume) / 100)); video.style.width = e.imagem_largura + 'px';
+    midia = el('div', 'midia'); midia.append(video);
+  } else if (a.imagem_url) {
+    const i = el('img'); i.style.width = e.imagem_largura + 'px'; i.src = a.imagem_url; i.alt = '';
+    midia = el('div', 'midia'); midia.append(i);
+  }
+  const sobre = pos.startsWith('sobre_');
+  if (sobre && !midia) pos = 'abaixo';
+  const txt = el('div', 'txt'), ti = el('div', 'ti'), t = el('div', 't'), u = a.user || '', k = u ? a.texto.indexOf(u) : -1;
   if (k < 0) t.textContent = a.texto;
   else { const d = el('span', null, u); d.style.color = e.cor_destaque; t.append(document.createTextNode(a.texto.slice(0, k)), d, document.createTextNode(a.texto.slice(k + u.length))); }
-  al.append(t);
-  if (a.mensagem) al.append(el('div', 'm', a.mensagem));
-  al.className = 'on';
+  ti.append(t);
+  if (a.mensagem) ti.append(el('div', 'm', a.mensagem));
+  ti.style.left = (+e.texto_x || 0) + 'px'; ti.style.top = (+e.texto_y || 0) + 'px';
+  txt.append(ti);
+  if (midia) al.append(midia);
+  al.append(txt);
+  const ent = v => ENT.includes(v) ? v : 'pop', sai = v => SAI.includes(v) ? v : 'suave';
+  const blocos = [[txt, ent(e.texto_entrada), sai(e.texto_saida)]];
+  if (midia) blocos.push([midia, ent(e.midia_entrada), sai(e.midia_saida)]);
+  al.className = 'on ' + (sobre && midia ? 'p-abaixo sobre s-' + pos.slice(6) : 'p-' + pos);
   void al.offsetWidth;
-  al.className = 'on in ' + (['fade', 'slide', 'pop', 'bounce'].includes(e.animacao) ? e.animacao : 'pop');
+  const atraso = Math.max(0, Math.min(5000, +e.texto_atraso || 0));
+  for (const [b, en] of blocos) { b.className = (b === txt ? 'txt' : 'midia') + ' in in-' + en; if (b === txt && atraso) b.style.animationDelay = atraso + 'ms'; }
+  return {video, sair() { for (const [b, , sa] of blocos) b.className = (b === txt ? 'txt' : 'midia') + ' out out-' + sa; }};
 }
 
 // toca o audio e resolve quando termina (ou falha/bloqueia); cancelavel
@@ -76,17 +119,32 @@ function tocar(r, url, vol) {
     setTimeout(fim, 60000);
   });
 }
+// roda o video e resolve quando termina (ended/error/60 s); se o som for barrado, tenta mudo
+function tocarVideo(r, v) {
+  return new Promise(res => {
+    if (!v || r.stop) return res();
+    let ok = false;
+    const fim = () => { if (!ok) { ok = true; res(); } };
+    v.addEventListener('ended', fim); v.addEventListener('error', fim);
+    try {
+      const p = v.play();
+      if (p && p.catch) p.catch(() => { try { v.muted = true; const q = v.play(); if (q && q.catch) q.catch(() => {}); } catch (e) {} });
+    } catch (e) { return fim(); }
+    r.cancel.push(fim);
+    setTimeout(fim, 60000);
+  });
+}
 const espera = (r, ms) => new Promise(res => { const t = setTimeout(res, ms); r.cancel.push(() => { clearTimeout(t); res(); }); });
 
 async function alerta(a) {
   if (run) encerrar(run, false);
   const r = run = {id: a.id, stop: false, audios: [], cancel: []};
-  montar(a);
+  const m = r.m = montar(a);
   const duracao = espera(r, Math.max(2, a.duracao) * 1000);
   const audio = (async () => { await tocar(r, a.som_url, a.volume); await tocar(r, a.tts_url, a.tts_volume == null ? 90 : a.tts_volume); })();
-  await Promise.all([duracao, audio]);
+  await Promise.all([duracao, audio, tocarVideo(r, m.video)]);
   if (r.stop) return;
-  al.className = 'on out';
+  m.sair();
   await espera(r, 500);
   if (run === r) { al.className = ''; run = null; }
   send({type: 'fim', id: r.id});
@@ -94,6 +152,7 @@ async function alerta(a) {
 function encerrar(r, avisar) {
   r.stop = true;
   for (const a of r.audios) { try { a.pause(); } catch (e) {} }
+  try { if (r.m && r.m.video) r.m.video.pause(); } catch (e) {}
   for (const f of r.cancel) f();
   if (run === r) { run = null; al.className = ''; al.replaceChildren(); }
   if (avisar) send({type: 'fim', id: r.id});

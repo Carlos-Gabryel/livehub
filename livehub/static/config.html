@@ -348,7 +348,6 @@ textarea{width:100%;min-height:70px;border-radius:8px;border:1px solid #3a3a48;b
           <button type="button" role="menuitem" onclick="alTestar('raid')">Raid / host</button>
           <button type="button" role="menuitem" onclick="alTestar('cheer')">Bits / Kicks / presentes</button>
           <button type="button" role="menuitem" onclick="alTestar('doacao')">Doação / Super Chat</button>
-          <button type="button" role="menuitem" onclick="alTestar('cheer', true)">Bits com voz (TTS)</button>
         </div></div>
       <span class="mut" id="al_tmsg" role="status"></span></div>
     <div id="alprev"><iframe id="alframe" title="Prévia dos alertas"></iframe></div>
@@ -359,14 +358,22 @@ textarea{width:100%;min-height:70px;border-radius:8px;border:1px solid #3a3a48;b
       <div class="fld"><label for="al_e_tamanho">Tamanho (12 a 120 px)</label><input type="number" id="al_e_tamanho" min="12" max="120"></div>
       <div class="fld"><label for="al_e_cor_texto">Cor do texto</label><input type="color" id="al_e_cor_texto"></div>
       <div class="fld"><label for="al_e_cor_destaque">Cor do nome (destaque)</label><input type="color" id="al_e_cor_destaque"></div>
-      <div class="fld"><label for="al_e_animacao">Animação</label><select id="al_e_animacao"><option value="fade">Aparecer suave</option><option value="slide">Deslizar</option><option value="pop">Surgir (pop)</option><option value="bounce">Quicar</option></select></div>
-      <div class="fld"><label for="al_e_imagem_largura">Largura da imagem (px)</label><input type="number" id="al_e_imagem_largura" min="40" max="1600"></div>
+      <div class="fld"><label for="al_e_imagem_largura">Largura da imagem/vídeo (px)</label><input type="number" id="al_e_imagem_largura" min="40" max="1600"></div>
+      <div class="fld"><label for="al_e_posicao_texto">Posição do texto</label><select id="al_e_posicao_texto"><option value="abaixo">Abaixo da imagem</option><option value="acima">Acima da imagem</option><option value="esquerda">À esquerda da imagem</option><option value="direita">À direita da imagem</option><option value="sobre_topo">Sobre a imagem — topo</option><option value="sobre_meio">Sobre a imagem — meio</option><option value="sobre_base">Sobre a imagem — base</option></select></div>
+      <div class="fld"><label for="al_e_texto_x">Ajuste horizontal do texto (px)</label><input type="number" id="al_e_texto_x" min="-400" max="400"></div>
+      <div class="fld"><label for="al_e_texto_y">Ajuste vertical do texto (px)</label><input type="number" id="al_e_texto_y" min="-400" max="400"></div>
+      <div class="fld"><label for="al_e_midia_entrada">Entrada da imagem/vídeo</label><select id="al_e_midia_entrada"><option value="nenhuma">Nenhuma</option><option value="fade">Aparecer suave</option><option value="slide">Deslizar de cima</option><option value="pop">Surgir (pop)</option><option value="bounce">Quicar</option><option value="zoom">Zoom</option><option value="esquerda">Deslizar da esquerda</option><option value="direita">Deslizar da direita</option><option value="baixo">Subir de baixo</option></select></div>
+      <div class="fld"><label for="al_e_midia_saida">Saída da imagem/vídeo</label><select id="al_e_midia_saida"><option value="nenhuma">Nenhuma (some na hora)</option><option value="suave">Suave (padrão)</option><option value="fade">Desaparecer</option><option value="encolher">Encolher</option><option value="cima">Sair para cima</option><option value="baixo">Sair para baixo</option><option value="esquerda">Sair para a esquerda</option><option value="direita">Sair para a direita</option></select></div>
+      <div class="fld"><label for="al_e_texto_entrada">Entrada do texto</label><select id="al_e_texto_entrada"><option value="nenhuma">Nenhuma</option><option value="fade">Aparecer suave</option><option value="slide">Deslizar de cima</option><option value="pop">Surgir (pop)</option><option value="bounce">Quicar</option><option value="zoom">Zoom</option><option value="esquerda">Deslizar da esquerda</option><option value="direita">Deslizar da direita</option><option value="baixo">Subir de baixo</option></select></div>
+      <div class="fld"><label for="al_e_texto_saida">Saída do texto</label><select id="al_e_texto_saida"><option value="nenhuma">Nenhuma (some na hora)</option><option value="suave">Suave (padrão)</option><option value="fade">Desaparecer</option><option value="encolher">Encolher</option><option value="cima">Sair para cima</option><option value="baixo">Sair para baixo</option><option value="esquerda">Sair para a esquerda</option><option value="direita">Sair para a direita</option></select></div>
+      <div class="fld"><label for="al_e_texto_atraso">Atraso do texto (ms)</label><input type="number" id="al_e_texto_atraso" min="0" max="5000" step="100"></div>
+      <div class="fld"><label for="al_e_mensagem_max">Máximo de caracteres da mensagem na tela (20 a 500)</label><input type="number" id="al_e_mensagem_max" min="20" max="500"><span class="mut">Mensagens maiores são cortadas no alerta; o texto completo continua no feed de eventos.</span></div>
       <label class="inl"><input type="checkbox" id="al_e_contorno"> Contorno no texto</label>
     </div>
   </div>
   <div id="al_cats"></div>
   <div class="card alc" id="sec_al_tts"><h2>Voz (TTS)</h2>
-    <span class="mut">Lê a mensagem de bits, kicks, Super Chat e doações em voz alta, nas categorias com "Ler a mensagem em voz alta" ligado.</span>
+    <span class="mut">Lê em voz alta as mensagens escritas pelos viewers (bits, Kicks, Super Chat, doações e mensagens de resub/membro), nas categorias com "Ler a mensagem em voz alta" ligado.</span>
     <span class="mut"><b>Atenção:</b> vem desligado de propósito. Com valor mínimo 0, qualquer pessoa com 1 bit faz a live falar o que quiser — e o streamer responde pelo que sai na live. Antes de ligar, defina um valor mínimo e preencha as palavras bloqueadas.</span>
     <div class="alg">
       <div class="fld"><label for="al_t_motor">Motor</label><select id="al_t_motor"><option value="neural">Neural (online, mais natural)</option><option value="windows">Windows (offline)</option></select></div>
@@ -375,15 +382,18 @@ textarea{width:100%;min-height:70px;border-radius:8px;border:1px solid #3a3a48;b
       <div class="fld"><label for="al_t_volume">Volume (0 a 100)</label><input type="number" id="al_t_volume" min="0" max="100"></div>
       <div class="fld"><label for="al_t_minimo">Valor mínimo para ler</label><input type="number" id="al_t_minimo" min="0" step="any"><span class="mut">Valor aproximado, ignora a moeda.</span></div>
       <div class="fld"><label for="al_t_max_caracteres">Máximo de caracteres (20 a 500)</label><input type="number" id="al_t_max_caracteres" min="20" max="500"></div>
-      <label class="inl"><input type="checkbox" id="al_t_ler_nome"> Falar o nome ("fulano disse: ...")</label>
+      <label class="inl"><input type="checkbox" id="al_t_ler_nome"> Ler o anúncio antes da mensagem (ex.: "Fulano doou R$ 10,00!")</label>
       <label class="inl"><input type="checkbox" id="al_t_remover_links"> Remover links</label>
       <div class="fld full"><label for="al_t_palavras_bloqueadas">Palavras bloqueadas (uma por linha; são removidas da fala)</label><textarea id="al_t_palavras_bloqueadas" maxlength="6000"></textarea></div>
     </div>
-    <span class="mut">Para ouvir a voz, use <b>Testar alerta → Bits com voz (TTS)</b> lá em cima, perto da prévia.</span>
+    <div class="flex"><button type="button" class="btn" onclick="alTestar('doacao')">Testar voz</button><span class="mut" id="al_t_msg" role="status"></span></div>
+    <span class="mut">O teste de alerta com mensagem (bits, doação, assinatura) usa uma mensagem aleatória e lê em voz alta, para você conferir se a voz está funcionando.</span>
   </div>
-  <div class="card alc"><h2>Pastas</h2>
-    <span class="mut">Sons (.mp3, .wav, .ogg, .flac) e imagens (.png, .jpg, .gif, .webp) que você colocar nas pastas aparecem nas listas acima.</span>
-    <div class="flex"><button type="button" class="btn" onclick="abrirSons()">Abrir pasta de sons</button><button type="button" class="btn" onclick="alAbrirImagens()">Abrir pasta de imagens</button><button type="button" class="btn" onclick="alMidia()">Atualizar listas</button><span class="mut" id="al_msg" role="status"></span></div>
+  <div class="card alc" id="al_drop"><h2>Arquivos (sons, imagens e vídeos)</h2>
+    <span class="mut">Escolha vários arquivos de uma vez (por exemplo 15, misturando sons, imagens e vídeos) ou arraste-os para cá. O programa copia cada um para a pasta certa, de acordo com o tipo. Aceitos: sons (.mp3, .wav, .ogg, .flac), imagens (.png, .jpg, .gif, .webp, .apng) e vídeos (.mp4, .webm).</span>
+    <div class="flex"><button type="button" class="btn pri" onclick="$('al_up').click()">Adicionar arquivos…</button><span id="al_up_msg" role="status" style="font-weight:600"></span></div>
+    <input type="file" multiple id="al_up" hidden accept=".mp3,.wav,.ogg,.flac,.png,.jpg,.jpeg,.gif,.webp,.apng,.mp4,.webm,audio/*,image/*,video/*">
+    <div class="flex"><button type="button" class="btn" onclick="abrirSons()">Abrir pasta de sons</button><button type="button" class="btn" onclick="alAbrirImagens()">Abrir pasta de imagens</button><button type="button" class="btn" onclick="alAbrirVideos()">Abrir pasta de vídeos</button><button type="button" class="btn" onclick="alMidia()">Atualizar listas</button><span class="mut" id="al_msg" role="status"></span></div>
   </div>
 </section>
 
@@ -789,8 +799,8 @@ function falta_salvar(el) {
 async function abrirSons() { const r = await api('/api/abrir-sons', {}); if (!r.ok) $('au_msg').textContent = r.j.erro || 'Erro.'; }
 
 /* ---- Alertas ---- */
-const AL_CATS = [['follow','Seguidor novo',0],['sub','Assinatura / membro',0],['presente','Presente de subs / membros',0],['raid','Raid / host',0],['cheer','Bits / Kicks / presentes do TikTok / Super Sticker',1],['doacao','Doação / Super Chat',1]];
-let AL_MIDIA = {sons:[], imagens:[], vozes_neural:[], vozes_windows:[]}, alFrame = false;
+const AL_CATS = [['follow','Seguidor novo',0],['sub','Assinatura / membro',2],['presente','Presente de subs / membros',0],['raid','Raid / host',0],['cheer','Bits / Kicks / presentes do TikTok / Super Sticker',1],['doacao','Doação / Super Chat',1]];
+let AL_MIDIA = {sons:[], imagens:[], videos:[], vozes_neural:[], vozes_windows:[]}, alFrame = false;
 function alMontar() {
   const box = $('al_cats');
   for (const [k, nome, extra] of AL_CATS) {
@@ -800,20 +810,20 @@ function alMontar() {
       '<div class="alg">' +
       '<div class="fld full"><label for="' + p + 'texto">Texto</label><input type="text" id="' + p + 'texto" maxlength="200"><span class="mut">Variáveis: {user} {valor} {detalhe} {mensagem} {plataforma}</span></div>' +
       '<div class="fld"><label for="' + p + 'som">Som</label><select id="' + p + 'som"></select></div>' +
-      '<div class="fld"><label for="' + p + 'volume">Volume do som (0 a 100)</label><input type="number" id="' + p + 'volume" min="0" max="100"></div>' +
-      '<div class="fld"><label for="' + p + 'imagem">Imagem</label><select id="' + p + 'imagem"></select></div>' +
+      '<div class="fld"><label for="' + p + 'volume">Volume do som e do vídeo (0 a 100)</label><input type="number" id="' + p + 'volume" min="0" max="100"></div>' +
+      '<div class="fld"><label for="' + p + 'imagem">Imagem ou vídeo</label><select id="' + p + 'imagem"></select></div>' +
       '<div class="fld"><label for="' + p + 'duracao">Duração (2 a 30 s)</label><input type="number" id="' + p + 'duracao" min="2" max="30"></div>' +
-      (extra ? '<div class="fld"><label for="' + p + 'minimo">Valor mínimo (0 = todos)</label><input type="number" id="' + p + 'minimo" min="0" step="any"><span class="mut">Valor aproximado, ignora a moeda.</span></div>' +
-        '<label class="inl"><input type="checkbox" id="' + p + 'tts"> Ler a mensagem em voz alta</label>' : '') +
+      (extra === 1 ? '<div class="fld"><label for="' + p + 'minimo">Valor mínimo (0 = todos)</label><input type="number" id="' + p + 'minimo" min="0" step="any"><span class="mut">Valor aproximado, ignora a moeda.</span></div>' : '') +
+      (extra ? '<label class="inl"><input type="checkbox" id="' + p + 'tts"> Ler a mensagem em voz alta</label>' : '') +
       '</div>';
     box.appendChild(d);
   }
   for (const id of alIds()) if (!SV.includes(id)) SV.push(id);
 }
 function alIds() {
-  const ids = ['al_e_fonte','al_e_tamanho','al_e_cor_texto','al_e_cor_destaque','al_e_animacao','al_e_imagem_largura','al_e_contorno',
+  const ids = ['al_e_fonte','al_e_tamanho','al_e_cor_texto','al_e_cor_destaque','al_e_imagem_largura','al_e_contorno','al_e_posicao_texto','al_e_texto_x','al_e_texto_y','al_e_midia_entrada','al_e_midia_saida','al_e_texto_entrada','al_e_texto_saida','al_e_texto_atraso','al_e_mensagem_max',
     'al_t_motor','al_t_voz_neural','al_t_voz_windows','al_t_volume','al_t_minimo','al_t_max_caracteres','al_t_ler_nome','al_t_remover_links','al_t_palavras_bloqueadas'];
-  for (const [k, , extra] of AL_CATS) for (const f of ['ativo','texto','som','volume','imagem','duracao', ...(extra ? ['minimo','tts'] : [])]) ids.push('al_' + k + '_' + f);
+  for (const [k, , extra] of AL_CATS) for (const f of ['ativo','texto','som','volume','imagem','duracao', ...(extra === 1 ? ['minimo'] : []), ...(extra ? ['tts'] : [])]) ids.push('al_' + k + '_' + f);
   return ids;
 }
 function alOpcoes(id, lista, vazio, atual) {
@@ -823,16 +833,29 @@ function alOpcoes(id, lista, vazio, atual) {
   for (const n of l) sel.add(new Option(n, n));
   sel.value = atual || '';
 }
+function alOpcoesMidia(id, imgs, vids, atual) {
+  const sel = $(id); sel.innerHTML = '';
+  sel.add(new Option('nenhuma', ''));
+  const g = (rot, pre, l) => { const o = document.createElement('optgroup'); o.label = rot; for (const n of l) o.appendChild(new Option(n, pre + n)); sel.appendChild(o); };
+  const li = [...imgs], lv = [...vids];
+  if (atual.startsWith('img:') && !li.includes(atual.slice(4))) li.push(atual.slice(4));
+  if (atual.startsWith('vid:') && !lv.includes(atual.slice(4))) lv.push(atual.slice(4));
+  g('Imagens', 'img:', li); g('Vídeos', 'vid:', lv);
+  sel.value = atual;
+}
 function alPreencher(a) {
   $('al_ativo').checked = a.ativo;
   const e = a.estilo;
   $('al_e_fonte').value = e.fonte; $('al_e_tamanho').value = e.tamanho; $('al_e_cor_texto').value = e.cor_texto; $('al_e_cor_destaque').value = e.cor_destaque;
-  $('al_e_animacao').value = e.animacao; $('al_e_imagem_largura').value = e.imagem_largura; $('al_e_contorno').checked = e.contorno;
+  $('al_e_posicao_texto').value = e.posicao_texto; $('al_e_texto_x').value = e.texto_x; $('al_e_texto_y').value = e.texto_y;
+  $('al_e_midia_entrada').value = e.midia_entrada; $('al_e_midia_saida').value = e.midia_saida; $('al_e_texto_entrada').value = e.texto_entrada; $('al_e_texto_saida').value = e.texto_saida; $('al_e_texto_atraso').value = e.texto_atraso; $('al_e_mensagem_max').value = e.mensagem_max;
+  $('al_e_imagem_largura').value = e.imagem_largura; $('al_e_contorno').checked = e.contorno;
   for (const [k, , extra] of AL_CATS) {
     const c = a.categorias[k], p = 'al_' + k + '_';
     $(p + 'ativo').checked = c.ativo; $(p + 'texto').value = c.texto; $(p + 'volume').value = c.volume; $(p + 'duracao').value = c.duracao;
-    alOpcoes(p + 'som', AL_MIDIA.sons, 'nenhum', c.som); alOpcoes(p + 'imagem', AL_MIDIA.imagens, 'nenhuma', c.imagem);
-    if (extra) { $(p + 'minimo').value = c.minimo; $(p + 'tts').checked = c.tts; }
+    alOpcoes(p + 'som', AL_MIDIA.sons, 'nenhum', c.som); alOpcoesMidia(p + 'imagem', AL_MIDIA.imagens, AL_MIDIA.videos || [], c.video ? 'vid:' + c.video : c.imagem ? 'img:' + c.imagem : '');
+    if (extra === 1) $(p + 'minimo').value = c.minimo;
+    if (extra) $(p + 'tts').checked = c.tts;
   }
   const t = a.tts;
   $('al_t_motor').value = t.motor; $('al_t_volume').value = t.volume; $('al_t_minimo').value = t.minimo; $('al_t_max_caracteres').value = t.max_caracteres;
@@ -843,12 +866,15 @@ function alLer() {
   const n = id => $(id).value === '' ? null : +$(id).value, cats = {};
   for (const [k, , extra] of AL_CATS) {
     const p = 'al_' + k + '_';
-    cats[k] = {ativo:$(p + 'ativo').checked, texto:$(p + 'texto').value, som:$(p + 'som').value, volume:n(p + 'volume'), imagem:$(p + 'imagem').value, duracao:n(p + 'duracao')};
-    if (extra) { cats[k].minimo = n(p + 'minimo'); cats[k].tts = $(p + 'tts').checked; }
+    cats[k] = {ativo:$(p + 'ativo').checked, texto:$(p + 'texto').value, som:$(p + 'som').value, volume:n(p + 'volume'), imagem:$(p + 'imagem').value.startsWith('img:') ? $(p + 'imagem').value.slice(4) : '', video:$(p + 'imagem').value.startsWith('vid:') ? $(p + 'imagem').value.slice(4) : '', duracao:n(p + 'duracao')};
+    if (extra === 1) cats[k].minimo = n(p + 'minimo');
+    if (extra) cats[k].tts = $(p + 'tts').checked;
   }
   return {ativo:$('al_ativo').checked,
     estilo:{fonte:$('al_e_fonte').value, tamanho:n('al_e_tamanho'), cor_texto:$('al_e_cor_texto').value, cor_destaque:$('al_e_cor_destaque').value,
-      animacao:$('al_e_animacao').value, imagem_largura:n('al_e_imagem_largura'), contorno:$('al_e_contorno').checked},
+      imagem_largura:n('al_e_imagem_largura'), contorno:$('al_e_contorno').checked,
+      posicao_texto:$('al_e_posicao_texto').value, texto_x:n('al_e_texto_x'), texto_y:n('al_e_texto_y'), midia_entrada:$('al_e_midia_entrada').value, midia_saida:$('al_e_midia_saida').value,
+      texto_entrada:$('al_e_texto_entrada').value, texto_saida:$('al_e_texto_saida').value, texto_atraso:n('al_e_texto_atraso'), mensagem_max:n('al_e_mensagem_max')},
     categorias:cats,
     tts:{motor:$('al_t_motor').value, voz_neural:$('al_t_voz_neural').value, voz_windows:$('al_t_voz_windows').value, volume:n('al_t_volume'), minimo:n('al_t_minimo'),
       max_caracteres:n('al_t_max_caracteres'), ler_nome:$('al_t_ler_nome').checked, remover_links:$('al_t_remover_links').checked,
@@ -893,13 +919,45 @@ function alMenu(abrir) {
 }
 document.addEventListener('click', e => { if (!e.target.closest('.tmenu')) alMenu(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('al_tlista').hidden) { alMenu(false); $('al_tbtn').focus(); } });
-async function alTestar(cat, tts) {
+async function alTestar(cat) {
   alMenu(false);
   if (sujo() && !await salvar()) return;
-  const r = await api('/api/alertas/testar', tts ? {categoria:cat, tts:true} : {categoria:cat});
-  $('al_tmsg').textContent = r.ok ? (r.j.ok ? 'Teste enviado — veja na prévia.' : 'Fila cheia.') : (r.j.erro || 'Erro.');
+  const m = t => { $('al_tmsg').textContent = t; $('al_t_msg').textContent = t; };
+  m('Gerando a voz…');
+  const r = await api('/api/alertas/testar', {categoria:cat});
+  let t = !r.ok ? (r.j.erro || 'Erro.') : !r.j.ok ? 'Fila cheia.' : r.j.tts === null ? 'Teste enviado — veja na prévia.' : r.j.tts ? 'Teste enviado com voz — veja e ouça na prévia.' : 'Teste enviado, mas a voz (TTS) falhou. Confira o motor e a voz em Voz (TTS).';
+  if (r.ok && r.j.ok && r.j.tts !== null) {
+    const nome = (AL_CATS.find(c => c[0] === cat) || [, cat])[1];
+    if (r.j.tts_na_live === false) t += ' Atenção: na live a voz está DESLIGADA para "' + nome + '". Ligue "Ler a mensagem em voz alta" em Tipos de alerta → ' + nome + '.';
+    else if (r.j.tts_minimo > 0) t += ' Na live, só lê a partir do valor ' + r.j.tts_minimo + ' (o teste ignora o mínimo).';
+  }
+  m(t);
   setTimeout(alEstado, 300);
 }
+async function alAbrirVideos() { const r = await api('/api/alertas/abrir_videos', {}); if (!r.ok) $('al_msg').textContent = r.j.erro || 'Erro.'; }
+async function alEnviar(files) {
+  files = [...files]; const msg = $('al_up_msg'), cont = {som:0, imagem:0, video:0}, falhas = [], nomes = {som:'sons', imagem:'imagens', video:'vídeos'};
+  let ok = 0;
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i]; msg.textContent = 'Enviando ' + (i + 1) + ' de ' + files.length + ': ' + f.name + '…';
+    try {
+      const resp = await fetch('/api/midia/enviar?nome=' + encodeURIComponent(f.name), {method:'POST', headers:{'Content-Type':'application/octet-stream'}, body:f});
+      let j = {}; try { j = await resp.json(); } catch (e) {}
+      if (resp.ok && j.ok) { ok++; cont[j.tipo] = (cont[j.tipo] || 0) + 1; } else falhas.push(f.name + ': ' + (j.erro || 'erro ' + resp.status));
+    } catch (e) { falhas.push(f.name + ': falha de conexão'); }
+  }
+  const partes = Object.keys(cont).filter(k => cont[k]).map(k => cont[k] + ' ' + (k === 'video' ? 'vídeos' : nomes[k]));
+  msg.textContent = files.length + ' arquivo' + (files.length === 1 ? '' : 's') + ': ' + (partes.join(', ') || 'nenhum enviado') + '.' + falhas.map(x => '\n' + x).join('');
+  msg.style.whiteSpace = 'pre-line';
+  if (ok) await alMidia();
+}
+(function () {
+  const up = $('al_up'), dz = $('al_drop');
+  up.addEventListener('change', async () => { const f = [...up.files]; up.value = ''; if (f.length) await alEnviar(f); });
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.style.outline = '2px dashed var(--acc, #6aa9ff)'; });
+  dz.addEventListener('dragleave', () => { dz.style.outline = ''; });
+  dz.addEventListener('drop', async e => { e.preventDefault(); dz.style.outline = ''; if (e.dataTransfer.files.length) await alEnviar(e.dataTransfer.files); });
+})();
 async function alAbrirImagens() { const r = await api('/api/alertas/abrir_imagens', {}); if (!r.ok) $('al_msg').textContent = r.j.erro || 'Erro.'; }
 
 /* ---- Aparência do chat ---- */

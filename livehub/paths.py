@@ -34,5 +34,11 @@ def imagens_dir() -> Path:
     return p
 
 
+def videos_dir() -> Path:
+    p = data_dir() / "videos"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
 def log_file() -> Path:
     return data_dir() / "livehub.log"

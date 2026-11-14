@@ -130,7 +130,7 @@ def interacao_usernotice(tags, text=""):
             det = "Tier " + {"1000": "1", "2000": "2", "3000": "3"}.get(plano, plano or "1")
         if mid == "resub" or meses > 1:
             det += f", {meses} meses"
-        return dict(base, tipo="sub", user=nome, detalhe=det, valor="")
+        return dict(base, tipo="sub", user=nome, detalhe=det, valor="", mensagem=(text or "").strip()[:500])
     if mid == "subgift":
         if tags.get("msg-param-community-gift-id"):
             return None

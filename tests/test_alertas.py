@@ -6,7 +6,9 @@ from yarl import URL
 
 from livehub import paths, settings
 from livehub.alertas import regras, tts
-from livehub.alertas.servico import Alertas
+from livehub.alertas.servico import Alertas, MENSAGENS_TESTE, USUARIOS_TESTE
+
+MENSAGENS_TESTE_CORTADAS = {regras.cortar(m, 120) for m in MENSAGENS_TESTE}
 from livehub.chat.hub import Hub
 from livehub.runtime import Runtime
 from conftest import porta_livre
@@ -58,10 +60,18 @@ def test_preparar_texto():
     assert tts.preparar("veja https://x.com", {**c, "remover_links": False}) == "veja https://x.com"
     assert tts.preparar("isso é Feio e feioso", {**c, "palavras_bloqueadas": ["feio"]}) == "isso é e feioso"
     assert tts.preparar("a" * 300, {**c, "max_caracteres": 50}) == "a" * 50
-    assert tts.preparar("oi   tudo\n bem", c, "Ana") == "Ana disse: oi tudo bem"
-    assert tts.preparar("oi", {**c, "ler_nome": False}, "Ana") == "oi"
-    assert tts.preparar("https://x.com", c, "Ana") == ""
-    assert tts.preparar("   ", c) == ""
+    assert tts.preparar("oi   tudo\n bem", c, "Ana doou R$ 10,00!") == "Ana doou 10 reais! oi tudo bem"
+    assert tts.preparar("oi", c, "Ana mandou 100 bits") == "Ana mandou 100 bits. oi"
+    assert tts.preparar("oi", {**c, "ler_nome": False}, "Ana doou R$ 10,00!") == "oi"
+    assert tts.preparar("https://x.com", c, "Ana doou!") == ""  # sem mensagem do viewer nao fala nada
+    assert tts.preparar("   ", c, "Ana doou!") == ""
+
+
+def test_falar_valores():
+    f = tts._falar_valores
+    assert f("R$ 10,00") == "10 reais" and f("R$10") == "10 reais" and f("R$ 1,00") == "1 real"
+    assert f("R$ 10,50") == "10 reais e 50 centavos" and f("R$ 1.234,56") == "1234 reais e 56 centavos"
+    assert f("100 bits de 5 pessoas") == "100 bits de 5 pessoas"
 
 
 async def test_neural_falha_cai_para_windows(monkeypatch):
@@ -165,8 +175,8 @@ async def svc():
     await s.parar()
 
 
-async def ev(s, tipo, user="u", valor="", detalhe="", plat="twitch", id=None):
-    return await s.rt.hub.interacao(plat, tipo, user, detalhe, valor, id)
+async def ev(s, tipo, user="u", valor="", detalhe="", plat="twitch", id=None, mensagem=""):
+    return await s.rt.hub.interacao(plat, tipo, user, detalhe, valor, id, mensagem)
 
 
 async def test_ordem_e_fim_avanca(svc):
@@ -258,11 +268,11 @@ async def test_repetir_por_seq(svc):
 async def test_testar_amostras(svc):
     svc.clientes.add(svc.ws)
     with pytest.raises(ValueError):
-        svc.testar("nada")
-    svc.testar("cheer")
+        await svc.testar("nada")
+    assert (await svc.testar("cheer"))["ok"] is True
     await esperar(lambda: len(svc.ws.alertas()) == 1)
     a = svc.ws.alertas()[0]
-    assert a["user"] == "Teste" and "100 bits" in a["texto"] and a["mensagem"] == "Mensagem de teste do LiveHub"
+    assert a["user"] in USUARIOS_TESTE and a["texto"].endswith(" bits!") and a["mensagem"] in MENSAGENS_TESTE_CORTADAS
 
 
 async def test_minimo_inativo_resgate(svc):
@@ -288,8 +298,8 @@ async def test_tts_antes_de_enfileirar_mantem_ordem(svc, monkeypatch):
     svc.clientes.add(svc.ws)
     gerados = []
 
-    async def gerar(texto, cfg, user=""):
-        gerados.append((texto, user))
+    async def gerar(texto, cfg, anuncio=""):
+        gerados.append((texto, anuncio))
         await asyncio.sleep(0.2)
         return tts.tts_dir() / "x.mp3"
     monkeypatch.setattr(tts, "gerar", gerar)
@@ -297,7 +307,7 @@ async def test_tts_antes_de_enfileirar_mantem_ordem(svc, monkeypatch):
     await ev(svc, "follow", "Bia")
     await esperar(lambda: len(svc.ws.alertas()) == 1)
     a = svc.ws.alertas()[0]
-    assert a["categoria"] == "cheer" and a["tts_url"] == "/alertas/tts/x.mp3" and gerados == [("ola mundo", "Ana")]
+    assert a["categoria"] == "cheer" and a["tts_url"] == "/alertas/tts/x.mp3" and gerados == [("ola mundo", "Ana mandou 100 bits!")]
     svc.fim_do_cliente(a["id"])
     await esperar(lambda: len(svc.ws.alertas()) == 2)
     assert svc.ws.alertas()[1]["categoria"] == "follow" and svc.ws.alertas()[1]["tts_url"] == ""
@@ -307,7 +317,7 @@ async def test_tts_minimo_e_sem_mensagem(svc, monkeypatch):
     svc.clientes.add(svc.ws)
     gerados = []
 
-    async def gerar(texto, cfg, user=""):
+    async def gerar(texto, cfg, anuncio=""):
         gerados.append(texto)
         return None
     monkeypatch.setattr(tts, "gerar", gerar)
@@ -389,14 +399,17 @@ async def test_midia_rejeita_traversal(rt, data_dir):
             assert r.status == 200
 
 
-async def test_ws_fim_e_config_ao_vivo(rt):
+async def test_ws_fim_e_config_ao_vivo(rt, monkeypatch):
+    async def gerar(texto, cfg, anuncio=""):
+        return None
+    monkeypatch.setattr(tts, "gerar", gerar)
     rt.cfg["alertas"]["categorias"]["follow"]["duracao"] = 2
     async with aiohttp.ClientSession() as s:
         async with s.ws_connect(base(rt) + "/alertas/ws") as ws:
             async with s.post(base(rt) + "/api/alertas/testar", json={"categoria": "follow"}) as r:
                 assert (await r.json())["ok"] is True
             m = json.loads((await ws.receive(timeout=3)).data)
-            assert m["type"] == "alerta" and m["alerta"]["texto"] == "Teste seguiu!"
+            assert m["type"] == "alerta" and m["alerta"]["texto"].endswith(" seguiu!")
             assert rt.alertas.estado()["atual"]["id"] == m["alerta"]["id"]
             await ws.send_json({"type": "fim", "id": m["alerta"]["id"]})
             await esperar(lambda: rt.alertas.estado()["atual"] is None)
@@ -411,17 +424,21 @@ async def test_config_alertas_validacao_e_persistencia(rt, data_dir):
             async with s.post(base(rt) + "/api/config", json={"alertas": corpo}) as r:
                 return r.status, await r.json()
         st, j = await post({"categorias": {"follow": {"texto": "{user} chegou!", "som": "ding.wav", "duracao": 9, "volume": 50}},
-                            "estilo": {"animacao": "bounce", "tamanho": 60}, "tts": {"palavras_bloqueadas": ["a", " b "]}})
+                            "estilo": {"texto_entrada": "zoom", "tamanho": 60, "mensagem_max": 80}, "tts": {"palavras_bloqueadas": ["a", " b "]}})
         assert st == 200, j
         c = settings.load_config()["alertas"]
         assert c["categorias"]["follow"]["texto"] == "{user} chegou!" and c["categorias"]["follow"]["som"] == "ding.wav"
-        assert c["estilo"]["animacao"] == "bounce" and c["tts"]["palavras_bloqueadas"] == ["a", "b"]
+        assert c["estilo"]["texto_entrada"] == "zoom" and c["estilo"]["mensagem_max"] == 80 and c["tts"]["palavras_bloqueadas"] == ["a", "b"]
         assert rt.cfg["alertas"]["categorias"]["follow"]["duracao"] == 9  # reload aplicou
         for ruim in ({"categorias": {"follow": {"duracao": 1}}}, {"categorias": {"follow": {"duracao": 31}}},
                      {"categorias": {"follow": {"volume": 101}}}, {"categorias": {"follow": {"som": "nao.wav"}}},
                      {"categorias": {"follow": {"som": "../x.wav"}}}, {"categorias": {"follow": {"imagem": "x.png"}}},
                      {"categorias": {"cheer": {"minimo": -1}}}, {"categorias": {"xx": {}}},
-                     {"estilo": {"tamanho": 11}}, {"estilo": {"animacao": "zoom"}}, {"estilo": {"cor_texto": "red"}},
+                     {"estilo": {"tamanho": 11}}, {"estilo": {"texto_entrada": "girar"}}, {"estilo": {"midia_entrada": "suave"}},
+                     {"estilo": {"texto_saida": "pop"}}, {"estilo": {"midia_saida": "zoom"}},
+                     {"estilo": {"posicao_texto": "meio"}}, {"estilo": {"texto_x": 401}}, {"estilo": {"texto_y": -401}},
+                     {"estilo": {"mensagem_max": 19}}, {"estilo": {"mensagem_max": 501}}, {"estilo": {"texto_atraso": 5001}}, {"estilo": {"texto_atraso": -1}},
+                     {"categorias": {"follow": {"video": "nao.mp4"}}}, {"estilo": {"cor_texto": "red"}},
                      {"tts": {"max_caracteres": 10}}, {"tts": {"max_caracteres": 501}}, {"tts": {"motor": "x"}},
                      {"tts": {"voz_neural": "x; rm"}}, {"tts": {"palavras_bloqueadas": ["x"] * 201}},
                      {"tts": {"palavras_bloqueadas": "x"}}, {"ativo": "sim"}):
@@ -502,3 +519,200 @@ async def test_resgates_repetir(rt, monkeypatch):
         async with s.post(url, data="{}", headers={"Content-Type": "text/plain"}) as r:
             assert r.status in (403, 415)
     assert len(tocados) == 3
+
+
+# ---------- video, estilo novo, testar com TTS, upload ----------
+async def test_migracao_v2_animacao(data_dir):
+    settings.config_path().write_text(json.dumps({"settings_version": 1, "alertas": {"estilo": {"animacao": "bounce"}}}),
+                                      encoding="utf-8")
+    cfg = settings.load_config()
+    e = cfg["alertas"]["estilo"]
+    assert e["texto_entrada"] == e["midia_entrada"] == "bounce" and "animacao" not in e and cfg["settings_version"] == 2
+    assert "animacao" not in json.loads(settings.config_path().read_text(encoding="utf-8"))["alertas"]["estilo"]
+
+
+async def test_config_estilo_novo_e_video(rt):
+    from livehub import paths
+    (paths.videos_dir() / "v.mp4").write_bytes(b"x")
+    async with aiohttp.ClientSession() as s:
+        async with s.post(base(rt) + "/api/config", json={"alertas": {
+                "estilo": {"texto_entrada": "zoom", "midia_entrada": "baixo", "texto_saida": "encolher", "midia_saida": "cima",
+                           "posicao_texto": "sobre_meio", "texto_x": -400, "texto_y": 400, "texto_atraso": 5000},
+                "categorias": {"follow": {"video": "v.mp4"}}}}) as r:
+            assert r.status == 200, await r.text()
+    c = settings.load_config()["alertas"]
+    assert c["estilo"]["texto_saida"] == "encolher" and c["estilo"]["posicao_texto"] == "sobre_meio"
+    assert c["estilo"]["texto_x"] == -400 and c["estilo"]["texto_atraso"] == 5000 and c["categorias"]["follow"]["video"] == "v.mp4"
+
+
+async def test_video_enfileirar_e_rotas(rt):
+    from livehub import paths
+    (paths.videos_dir() / "v.webm").write_bytes(b"x")
+    (paths.imagens_dir() / "i.png").write_bytes(b"x")
+    c = rt.cfg["alertas"]["categorias"]["follow"]
+    c["video"], c["imagem"] = "v.webm", "i.png"
+    rt.alertas.pausar(True)
+    assert rt.alertas.enfileirar({"platform": "twitch", "tipo": "follow", "user": "a", "detalhe": "", "valor": "", "id": None, "seq": None}, "follow")
+    a = rt.alertas.fila[0]["alerta"]
+    assert a["video_url"] == "/alertas/midia/video/v.webm" and a["imagem_url"] == ""
+    async with aiohttp.ClientSession() as s:
+        async with s.get(base(rt) + a["video_url"]) as r:
+            assert r.status == 200
+        async with s.get(base(rt) + "/alertas/midia/video/nao.webm") as r:
+            assert r.status == 404
+        async with s.get(base(rt) + "/api/alertas/midia") as r:
+            assert (await r.json())["videos"] == ["v.webm"]
+
+
+EV_FOLLOW = {"platform": "twitch", "tipo": "follow", "user": "a", "detalhe": "", "valor": "", "id": None, "seq": None}
+
+
+async def test_testar_tts_resultado_e_texto(svc, monkeypatch):
+    falas = []
+
+    async def gerar(texto, cfg, anuncio=""):
+        falas.append(texto)
+        return tts.tts_dir() / "t.mp3"
+    monkeypatch.setattr(tts, "gerar", gerar)
+    assert (await svc.testar("cheer")).items() >= {"ok": True, "tts": True}.items()
+    assert await svc.testar("follow") == {"ok": True, "tts": None}  # sem mensagem de viewer: nao fala
+    assert len(falas) == 1 and falas[0] in MENSAGENS_TESTE
+
+    async def vazio(texto, cfg, anuncio=""):
+        return None
+    monkeypatch.setattr(tts, "gerar", vazio)
+    assert (await svc.testar("cheer")).items() >= {"ok": True, "tts": False}.items()
+
+    async def quebra(texto, cfg, anuncio=""):
+        raise RuntimeError("x")
+    monkeypatch.setattr(tts, "gerar", quebra)
+    assert (await svc.testar("cheer")).items() >= {"ok": True, "tts": False}.items()
+
+
+async def _up(s, rt, nome, dados=b"abc", ct="application/octet-stream"):
+    return await s.post(base(rt) + "/api/midia/enviar", params={"nome": nome}, data=dados, headers={"Content-Type": ct})
+
+
+async def test_upload_misto_colisao_e_traversal(rt, monkeypatch):
+    from livehub import paths
+    async with aiohttp.ClientSession() as s:
+        for nome, tipo in (("x.mp3", "som"), ("y.PNG", "imagem"), ("z.webm", "video")):
+            async with await _up(s, rt, nome) as r:
+                assert r.status == 200 and await r.json() == {"ok": True, "tipo": tipo, "nome": nome}
+        async with await _up(s, rt, "y.PNG") as r:
+            assert (await r.json())["nome"] == "y (2).PNG"
+        async with await _up(s, rt, "..\\..\\evil.png") as r:
+            assert (await r.json())["nome"] == "evil.png"
+        async with await _up(s, rt, "../../evil2.png") as r:
+            assert (await r.json())["nome"] == "evil2.png"
+        big = b"z" * (2 * 1024 * 1024)
+        async with await _up(s, rt, "grande.mp4", big) as r:
+            assert r.status == 200
+    assert (paths.sons_dir() / "x.mp3").is_file() and (paths.imagens_dir() / "y (2).PNG").is_file()
+    assert (paths.imagens_dir() / "evil.png").is_file() and (paths.videos_dir() / "z.webm").is_file()
+    assert (paths.videos_dir() / "grande.mp4").stat().st_size == len(big)
+    assert not (paths.data_dir().parent / "evil.png").exists()
+
+
+async def test_upload_erros(rt, monkeypatch):
+    from livehub import midia, paths
+    async with aiohttp.ClientSession() as s:
+        async with await _up(s, rt, "a.txt") as r:
+            assert r.status == 415
+        for ruim in ("CON.png", "...", "nul.mp3", ""):
+            async with await _up(s, rt, ruim) as r:
+                assert r.status == 400, ruim
+        async with await _up(s, rt, "a.png", ct="application/json") as r:
+            assert r.status in (403, 415)
+        async with s.post(base(rt) + "/api/midia/enviar?nome=a.png", data=b"x", headers={"Content-Type": "application/octet-stream", "Origin": "http://evil.example"}) as r:
+            assert r.status == 403
+        monkeypatch.setitem(midia.TIPOS, ".png", ("imagem", paths.imagens_dir, 1000))
+        async with await _up(s, rt, "g.png", b"x" * 5000) as r:
+            assert r.status == 413 and "grande" in (await r.json())["erro"]
+    assert not list(paths.imagens_dir().glob("*"))
+
+
+async def test_testar_doacao_anuncio_e_mensagem_aleatoria(svc, monkeypatch):
+    chamadas = []
+
+    async def gerar(texto, cfg, anuncio=""):
+        chamadas.append((texto, anuncio))
+        return tts.tts_dir() / "t.mp3"
+    monkeypatch.setattr(tts, "gerar", gerar)
+    assert (await svc.testar("doacao")).items() >= {"ok": True, "tts": True}.items()
+    texto, anuncio = chamadas[0]
+    assert texto in MENSAGENS_TESTE and "doou" in anuncio and texto not in anuncio
+    seq = iter(MENSAGENS_TESTE[:3])
+    monkeypatch.setattr("livehub.alertas.servico.random.choice", lambda l: next(seq) if l is MENSAGENS_TESTE else l[0])
+    await svc.testar("doacao")
+    await svc.testar("doacao")
+    assert chamadas[1][0] != chamadas[2][0]
+    assert (await svc.testar("sub")).items() >= {"ok": True, "tts": True}.items()
+    for cat in ("follow", "presente", "raid"):
+        n = len(chamadas)
+        assert await svc.testar(cat) == {"ok": True, "tts": None} and len(chamadas) == n
+
+
+async def test_mensagem_cortada_na_tela_e_completa_no_tts(svc, monkeypatch):
+    svc.clientes.add(svc.ws)
+    falas = []
+
+    async def gerar(texto, cfg, anuncio=""):
+        falas.append((texto, anuncio))
+        return None
+    monkeypatch.setattr(tts, "gerar", gerar)
+    svc.rt.cfg["alertas"]["estilo"]["mensagem_max"] = 30
+    svc.rt.cfg["alertas"]["categorias"]["doacao"]["tts"] = True
+    svc.rt.cfg["alertas"]["categorias"]["doacao"]["texto"] = "{user} doou {valor}! {mensagem}"
+    longa = "palavra " * 20
+    await ev(svc, "doação", "Ana", "R$ 10,00", longa.strip())
+    await esperar(lambda: len(svc.ws.alertas()) == 1)
+    a = svc.ws.alertas()[0]
+    assert len(a["mensagem"]) <= 30 and a["mensagem"].endswith("…") and a["texto"].endswith(a["mensagem"])
+    assert falas == [(longa.strip(), "Ana doou R$ 10,00!")]
+
+
+async def test_sub_com_mensagem_de_resub(svc, monkeypatch):
+    svc.clientes.add(svc.ws)
+    falas = []
+
+    async def gerar(texto, cfg, anuncio=""):
+        falas.append((texto, anuncio))
+        return None
+    monkeypatch.setattr(tts, "gerar", gerar)
+    svc.rt.cfg["alertas"]["categorias"]["sub"]["tts"] = True
+    e = await ev(svc, "sub", "Ana", "", "Tier 1, 3 meses", mensagem="amo essa live")
+    assert e["mensagem"] == "amo essa live" and regras.mensagem(e) == "amo essa live"
+    await esperar(lambda: len(svc.ws.alertas()) == 1)
+    assert falas == [("amo essa live", "Ana assinou! Tier 1, 3 meses")]
+
+
+def test_regras_texto_sem_mensagem():
+    e = {"tipo": "doação", "user": "A", "valor": "R$ 1,00", "detalhe": "oi"}
+    assert regras.texto("{user} doou {valor}! {mensagem}", e, sem_mensagem=True) == "A doou R$ 1,00!"
+    assert regras.texto("{user} {detalhe}", e, sem_mensagem=True) == "A"
+    e = {"tipo": "sub", "user": "A", "detalhe": "Tier 1", "mensagem": "oi"}
+    assert regras.texto("{user} {detalhe} {mensagem}", e, sem_mensagem=True) == "A Tier 1"
+
+
+def test_twitch_resub_mensagem_e_youtube_membro():
+    from livehub.chat import twitch, youtube
+    r = twitch.interacao_usernotice({"msg-id": "resub", "display-name": "Ana", "msg-param-cumulative-months": "3",
+                                     "msg-param-sub-plan": "1000", "system-msg": "Ana subscribed"}, " tmj demais ")
+    assert r["mensagem"] == "tmj demais" and regras.mensagem(r) == "tmj demais"
+    item = {"liveChatMembershipItemRenderer": {"id": "m1", "authorName": {"simpleText": "Bia"},
+            "headerSubtext": {"simpleText": "Membro há 6 meses"}, "message": {"runs": [{"text": "feliz com o canal"}]}}}
+    y = youtube.interacao_youtube(item)
+    assert y["mensagem"] == "feliz com o canal" and y["tipo"] == "membro"
+
+
+async def test_testar_avisa_quando_voz_desligada_na_live(svc, monkeypatch):
+    async def gerar(texto, cfg, anuncio=""):
+        return tts.tts_dir() / "t.mp3"
+    monkeypatch.setattr(tts, "gerar", gerar)
+    svc.rt.cfg["alertas"]["categorias"]["doacao"]["tts"] = False
+    svc.rt.cfg["alertas"]["tts"]["minimo"] = 5
+    r = await svc.testar("doacao")
+    assert r["tts"] is True and r["tts_na_live"] is False and r["tts_minimo"] == 5
+    svc.rt.cfg["alertas"]["categorias"]["doacao"]["tts"] = True
+    assert (await svc.testar("doacao"))["tts_na_live"] is True

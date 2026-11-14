@@ -258,7 +258,6 @@ async def test_overlay_de_alertas_mostra_e_confirma_fim(abrir, app):
     r = await page.evaluate("""() => fetch('/api/alertas/testar', {method: 'POST',
         headers: {'Content-Type': 'application/json'}, body: JSON.stringify({categoria: 'follow'})}).then(r => r.status)""")
     assert r == 200
-    await expect(page.locator("#al")).to_contain_text("Teste")
     await expect(page.locator("#al")).to_contain_text("seguiu")
     assert app.alertas.estado()["atual"] is not None
     await expect(page.locator("#al")).not_to_be_visible(timeout=6000)  # animou para fora e mandou fim
@@ -278,12 +277,12 @@ async def test_config_alertas_renderiza_e_salva(abrir, app):
     campo = page.locator("#al_follow_texto")
     await expect(campo).to_have_value("{user} seguiu!")
     await campo.fill("{user} é novo por aqui!")
-    await page.locator("#al_e_animacao").select_option("bounce")
+    await page.locator("#al_e_texto_entrada").select_option("bounce")
     await expect(page.locator("#barra")).to_be_visible()
     await page.click("#btn_salvar")
     await expect(page.locator("#toast")).to_contain_text("Salvo")
     c = settings.load_config()["alertas"]
-    assert c["categorias"]["follow"]["texto"] == "{user} é novo por aqui!" and c["estilo"]["animacao"] == "bounce"
+    assert c["categorias"]["follow"]["texto"] == "{user} é novo por aqui!" and c["estilo"]["texto_entrada"] == "bounce"
     await page.reload()
     await expect(page.locator("#al_follow_texto")).to_have_value("{user} é novo por aqui!")
     assert page.erros == []
@@ -477,7 +476,8 @@ async def test_alertas_botao_unico_de_teste(abrir):
     await expect(lista).to_be_hidden()
     await page.click("#al_tbtn")
     await expect(lista).to_be_visible()
-    assert await lista.locator("button").count() == 7
+    assert await lista.locator("button").count() == 6
+    assert await lista.locator("button", has_text="TTS").count() == 0
     await lista.locator("button", has_text="Seguidor novo").click()
     await expect(lista).to_be_hidden()
     await expect(page.locator("#al_tmsg")).to_contain_text("Teste enviado")
@@ -487,3 +487,48 @@ async def test_alertas_botao_unico_de_teste(abrir):
     await expect(lista).to_be_hidden()
     await page.click('.it[data-v="links"]')
     await expect(page.locator("#v-links #u_alertas")).to_contain_text("/alertas")
+
+
+async def test_alertas_upload_misto(abrir, tmp_path):
+    from livehub import paths
+    page = await abrir("/config#alertas")
+    arqs = []
+    for nome in ("a.mp3", "b.png", "c.webm", "d.txt"):
+        f = tmp_path / nome
+        f.write_bytes(b"dados-de-teste")
+        arqs.append(str(f))
+    await page.set_input_files("#al_up", arqs)
+    await expect(page.locator("#al_up_msg")).to_contain_text("d.txt", timeout=10000)
+    assert (paths.sons_dir() / "a.mp3").exists()
+    assert (paths.imagens_dir() / "b.png").exists()
+    assert (paths.videos_dir() / "c.webm").exists()
+    assert not list(paths.data_dir().rglob("d.txt"))
+    await expect(page.locator("#al_follow_imagem option[value='img:b.png']")).to_have_count(1)
+    await expect(page.locator("#al_follow_imagem option[value='vid:c.webm']")).to_have_count(1)
+    assert [e for e in page.erros if "415" not in e] == []  # o 415 do .txt e esperado
+
+
+async def test_alertas_teste_sem_tts_mostra_falha(abrir):
+    page = await abrir("/config#alertas")
+
+    async def falso(route):
+        await route.fulfill(json={"ok": True, "tts": False})
+    await page.route("**/api/alertas/testar", falso)
+    await page.click("#al_tbtn")
+    await page.locator("#al_tlista button", has_text="Doação / Super Chat").click()
+    await expect(page.locator("#al_tmsg")).to_contain_text("falhou")
+
+
+async def test_alertas_teste_sem_mensagem_e_sub_tts(abrir):
+    page = await abrir("/config#alertas")
+
+    async def falso(route):
+        await route.fulfill(json={"ok": True, "tts": None})
+    await page.route("**/api/alertas/testar", falso)
+    await page.click("#al_tbtn")
+    await page.locator("#al_tlista button", has_text="Seguidor novo").click()
+    await expect(page.locator("#al_tmsg")).to_have_text("Teste enviado — veja na prévia.")
+    await expect(page.locator("#al_sub_tts")).to_have_count(1)
+    await expect(page.locator("#al_sub_minimo")).to_have_count(0)
+    await expect(page.locator("#al_follow_tts")).to_have_count(0)
+    await expect(page.locator("#al_e_mensagem_max")).to_have_value("120")

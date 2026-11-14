@@ -27,6 +27,8 @@ async def seguranca(request, handler):
     """Barra Host/Origin estranhos em toda a aplicacao; POST em /api exige JSON."""
     if not origem_local(request):
         raise web.HTTPForbidden(text="Host/Origin nao permitido")
-    if request.method == "POST" and request.path.startswith("/api/") and request.content_type != "application/json":
-        raise web.HTTPUnsupportedMediaType(text="Use Content-Type: application/json")
+    if request.method == "POST" and request.path.startswith("/api/"):
+        tipo = "application/octet-stream" if request.path == "/api/midia/enviar" else "application/json"
+        if request.content_type != tipo:
+            raise web.HTTPUnsupportedMediaType(text="Use Content-Type: " + tipo)
     return await handler(request)

@@ -112,6 +112,7 @@ function render(m) {
   body.append(el('span', 'u', m.user || '?'), document.createTextNode(' '), el('span', 't', m.tipo || ''));
   if (m.valor) body.append(document.createTextNode(' '), el('span', 'v', m.valor));
   if (m.detalhe) body.append(el('span', 'd', m.detalhe));
+  if (m.mensagem) body.append(el('span', 'd', '“' + m.mensagem + '”'));
   row.append(el('div', 'ic', ICON[m.platform] || '?'), el('div', 'em', EMOJI[m.tipo] || '•'), body);
   if (m.seq) row.append(replayBtn(m));
   row.append(el('div', 'h', hora(m.ts)));

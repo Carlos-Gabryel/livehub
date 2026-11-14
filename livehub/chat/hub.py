@@ -27,13 +27,13 @@ class Hub:
         await self._feed({"type": "status", "status": self.status})
 
     # ---- feed de interacoes ----
-    async def interacao(self, platform, tipo, user, detalhe="", valor="", id=None):
+    async def interacao(self, platform, tipo, user, detalhe="", valor="", id=None, mensagem=""):
         if id:
             key = (platform, str(id))
             if key in self._ids:
                 return None
             self._ids.append(key)
-        ev = {"platform": platform, "tipo": tipo, "user": user or "?", "detalhe": detalhe or "", "valor": valor or "",
+        ev = {"platform": platform, "tipo": tipo, "user": user or "?", "detalhe": detalhe or "", "valor": valor or "", "mensagem": mensagem or "",
               "id": id, "ts": time.time(), "seq": next(self._seq)}
         self.interacoes.append(ev)
         for fn in list(self.ouvintes):

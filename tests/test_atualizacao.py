@@ -244,8 +244,8 @@ def test_marcar_ok_limpa_antigas(data_dir):
 def test_settings_ganha_versao(data_dir):
     settings.config_path().write_text(json.dumps({"web_port": 9001}), encoding="utf-8")
     cfg = settings.load_config()
-    assert cfg["settings_version"] == 1 and cfg["web_port"] == 9001
-    assert json.loads(settings.config_path().read_text(encoding="utf-8"))["settings_version"] == 1
+    assert cfg["settings_version"] == 2 and cfg["web_port"] == 9001
+    assert json.loads(settings.config_path().read_text(encoding="utf-8"))["settings_version"] == 2
 
 
 def test_migracao_roda_uma_vez(data_dir, monkeypatch):

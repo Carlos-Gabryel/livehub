@@ -29,14 +29,16 @@ DEFAULT_APARENCIA = {
 DEFAULT_ALERTAS = {
     "ativo": True,
     "estilo": {"fonte": "system-ui", "tamanho": 42, "cor_texto": "#ffffff", "cor_destaque": "#a970ff",
-               "contorno": True, "animacao": "pop", "imagem_largura": 300},
+               "contorno": True, "imagem_largura": 300,
+               "posicao_texto": "abaixo", "texto_x": 0, "texto_y": 0, "texto_entrada": "pop", "texto_saida": "suave",
+               "midia_entrada": "pop", "midia_saida": "suave", "texto_atraso": 0, "mensagem_max": 120},
     "categorias": {
-        "follow": {"ativo": True, "texto": "{user} seguiu!", "som": "", "volume": 80, "imagem": "", "duracao": 5, "minimo": 0, "tts": False},
-        "sub": {"ativo": True, "texto": "{user} assinou! {detalhe}", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": False},
-        "presente": {"ativo": True, "texto": "{user} presenteou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": False},
-        "raid": {"ativo": True, "texto": "{user} chegou com {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 8, "minimo": 0, "tts": False},
-        "cheer": {"ativo": True, "texto": "{user} mandou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 7, "minimo": 0, "tts": False},
-        "doacao": {"ativo": True, "texto": "{user} doou {valor}!", "som": "", "volume": 80, "imagem": "", "duracao": 8, "minimo": 0, "tts": False},  # TTS opt-in: trolls pagam pouco para a live falar ofensa
+        "follow": {"ativo": True, "texto": "{user} seguiu!", "som": "", "volume": 80, "imagem": "", "video": "", "duracao": 5, "minimo": 0, "tts": False},
+        "sub": {"ativo": True, "texto": "{user} assinou! {detalhe}", "som": "", "volume": 80, "imagem": "", "video": "", "duracao": 7, "minimo": 0, "tts": False},
+        "presente": {"ativo": True, "texto": "{user} presenteou {valor}!", "som": "", "volume": 80, "imagem": "", "video": "", "duracao": 7, "minimo": 0, "tts": False},
+        "raid": {"ativo": True, "texto": "{user} chegou com {valor}!", "som": "", "volume": 80, "imagem": "", "video": "", "duracao": 8, "minimo": 0, "tts": False},
+        "cheer": {"ativo": True, "texto": "{user} mandou {valor}!", "som": "", "volume": 80, "imagem": "", "video": "", "duracao": 7, "minimo": 0, "tts": False},
+        "doacao": {"ativo": True, "texto": "{user} doou {valor}!", "som": "", "volume": 80, "imagem": "", "video": "", "duracao": 8, "minimo": 0, "tts": False},  # TTS opt-in: trolls pagam pouco para a live falar ofensa
     },
     "tts": {"motor": "neural", "voz_neural": "pt-BR-FranciscaNeural", "voz_windows": "", "volume": 90,
             "minimo": 0, "max_caracteres": 200, "ler_nome": True, "remover_links": True, "palavras_bloqueadas": []},
@@ -53,7 +55,7 @@ DEFAULT_CONFIG = {
     "aparencia": DEFAULT_APARENCIA,
     "atualizacao": {"verificar": True, "modo": "avisar"},  # modo: "avisar" | "ao_sair"
     "alertas": DEFAULT_ALERTAS,
-    "settings_version": 1,
+    "settings_version": 2,
 }
 DEFAULT_SECRETS = {
     "twitch": {"client_id": "", "client_secret": "", "access_token": "", "refresh_token": "",
@@ -133,7 +135,15 @@ def _load_with_defaults(path: Path, defaults: dict, mode=None) -> dict:
 # Migracoes do config.json. Para mudar o formato no futuro: suba "settings_version" em DEFAULT_CONFIG
 # para N e registre aqui MIGRACOES[N] = fn(cfg) -> cfg (transforma o formato N-1 em N).
 # Rodam em ordem crescente, uma vez, so para arquivos com versao menor (sem a chave = 0).
-MIGRACOES: dict = {}
+def _migrar_v2(cfg: dict) -> dict:
+    e = cfg.get("alertas", {}).get("estilo", {})
+    anim = e.pop("animacao", None)
+    if anim in ("fade", "slide", "pop", "bounce"):
+        e["texto_entrada"] = e["midia_entrada"] = anim
+    return cfg
+
+
+MIGRACOES: dict = {2: _migrar_v2}
 
 
 def migrar(cfg: dict, v0: int) -> dict:

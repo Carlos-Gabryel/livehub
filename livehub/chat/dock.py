@@ -72,9 +72,9 @@ def add_routes(app, hub):
         if not isinstance(d, dict) or d.get("platform") not in PLATAFORMAS:
             return web.Response(status=400)
         campos = {}
-        for k in ("tipo", "user", "detalhe", "valor", "id"):
+        for k in ("tipo", "user", "detalhe", "valor", "mensagem", "id"):
             v = d.get(k)
-            if v is None and k in ("detalhe", "valor", "id"):
+            if v is None and k in ("detalhe", "valor", "mensagem", "id"):
                 campos[k] = None if k == "id" else ""
             elif isinstance(v, str) and len(v) <= 200 and (v or k not in ("tipo", "user")):
                 campos[k] = v

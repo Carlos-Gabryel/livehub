@@ -42,16 +42,33 @@ def _filtrar(t, cfg) -> str:
     return re.sub(r"\s+", " ", t).strip()
 
 
-def preparar(texto, cfg, user="") -> str:
-    """Limpa o texto conforme a config; '' se nao sobrar nada para falar. O nome passa pelo mesmo filtro."""
-    t = _filtrar(texto or "", cfg)
-    if not t:
+_DINHEIRO_RE = re.compile(r"R\$\s*(\d{1,3}(?:\.\d{3})+|\d+)(?:,(\d{1,2}))?")
+
+
+def _falar_valores(t) -> str:
+    """'R$ 10,50' -> '10 reais e 50 centavos' (o resto fica igual)."""
+    def troca(m):
+        reais = int(m.group(1).replace(".", ""))
+        cent = int((m.group(2) or "0").ljust(2, "0"))
+        s = f"{reais} " + ("real" if reais == 1 else "reais")
+        if cent:
+            s += f" e {cent} " + ("centavo" if cent == 1 else "centavos")
+        return s
+    return _DINHEIRO_RE.sub(troca, t)
+
+
+def preparar(mensagem, cfg, anuncio="") -> str:
+    """Anuncio (opcional) + mensagem do viewer, filtrados conforme a config; '' se nao ha mensagem para falar."""
+    m = _filtrar(mensagem or "", cfg)[:int(cfg.get("max_caracteres") or 200)].strip()
+    if not m:
         return ""
-    t = t[:int(cfg.get("max_caracteres") or 200)].strip()
-    u = _filtrar(user or "", cfg)[:40].strip() if cfg.get("ler_nome", True) else ""
-    if u:
-        t = f"{u} disse: {t}"
-    return t
+    if cfg.get("ler_nome", True) and anuncio:
+        a = _falar_valores(_filtrar(anuncio, cfg))[:150].strip()
+        if a:
+            if a[-1] not in ".!?":
+                a += "."
+            return f"{a} {m}"
+    return m
 
 
 def _limpar():
@@ -105,10 +122,10 @@ async def vozes_windows() -> list[str]:
         return []
 
 
-async def gerar(texto, cfg, user="") -> Path | None:
+async def gerar(texto, cfg, anuncio="") -> Path | None:
     """Gera o audio e devolve o caminho (em data_dir()/tts), ou None."""
     try:
-        t = preparar(texto, cfg, user)
+        t = preparar(texto, cfg, anuncio)
         if not t:
             return None
         base = tts_dir() / uuid.uuid4().hex

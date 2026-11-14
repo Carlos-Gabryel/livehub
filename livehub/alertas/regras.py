@@ -44,13 +44,29 @@ def numero(valor) -> float | None:
         return None
 
 
+def cortar(t, mx) -> str:
+    return t if len(t) <= mx else t[:mx - 1].rstrip() + "…"
+
+
 def mensagem(ev) -> str:
+    if ev.get("mensagem"):
+        return ev["mensagem"]
     return (ev.get("detalhe") or "") if (ev.get("tipo") or "").strip().lower() in _COM_MENSAGEM else ""
 
 
-def texto(template, ev) -> str:
-    rep = {"{user}": ev.get("user") or "", "{valor}": ev.get("valor") or "", "{detalhe}": ev.get("detalhe") or "",
-           "{mensagem}": mensagem(ev), "{plataforma}": ev.get("platform") or ""}
+def texto(template, ev, sem_mensagem=False, mensagem_max=None) -> str:
+    """sem_mensagem: {mensagem} (e {detalhe}, se ele e a mensagem) saem vazios. mensagem_max: corta a mensagem."""
+    msg = mensagem(ev)
+    det = ev.get("detalhe") or ""
+    de_detalhe = bool(msg) and msg == det
+    if sem_mensagem:
+        msg, det = "", "" if de_detalhe else det
+    elif mensagem_max and len(msg) > mensagem_max:
+        msg = cortar(msg, mensagem_max)
+        if de_detalhe:
+            det = msg
+    rep = {"{user}": ev.get("user") or "", "{valor}": ev.get("valor") or "", "{detalhe}": det,
+           "{mensagem}": msg, "{plataforma}": ev.get("platform") or ""}
     out = template or ""
     for k, v in rep.items():
         out = out.replace(k, v)

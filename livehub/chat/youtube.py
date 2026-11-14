@@ -62,7 +62,7 @@ def interacao_youtube(item):
         user = _txt(r.get("authorName")) or "?"
         if tipo == "membro":
             det = _txt(r.get("headerSubtext")) or _txt(r.get("headerPrimaryText"))
-            return dict(base, tipo=tipo, user=user, detalhe=det, valor="")
+            return dict(base, tipo=tipo, user=user, detalhe=det, valor="", mensagem=_txt(r.get("message")))
         return dict(base, tipo=tipo, user=user, detalhe=_txt(r.get("message")), valor=_txt(r.get("purchaseAmountText")))
     return None
 

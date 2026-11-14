@@ -89,7 +89,9 @@ def _secao(body, nome):
 HEX_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 FONTE_RE = re.compile(r"^[A-Za-z0-9 _.\-]{1,60}$")
 VOZ_NEURAL_RE = re.compile(r"^[A-Za-z]{2,3}-[A-Za-z]{2,4}-[A-Za-z]+Neural$")
-ANIMACOES = ("fade", "slide", "pop", "bounce")
+ENTRADAS = ("nenhuma", "fade", "slide", "pop", "bounce", "zoom", "esquerda", "direita", "baixo")
+SAIDAS = ("nenhuma", "suave", "fade", "encolher", "cima", "baixo", "esquerda", "direita")
+POSICOES_TEXTO = ("abaixo", "acima", "esquerda", "direita", "sobre_topo", "sobre_meio", "sobre_base")
 
 
 def _bool(campo, v):
@@ -143,10 +145,21 @@ def _alertas(a: dict, cfg: dict):
             est[k] = e[k].lower()
     if "contorno" in e:
         est["contorno"] = _bool("alertas.estilo.contorno", e["contorno"])
-    if "animacao" in e:
-        if e["animacao"] not in ANIMACOES:
-            raise Erro("alertas.estilo.animacao", "Opção inválida.")
-        est["animacao"] = e["animacao"]
+    for k, ops in (("texto_entrada", ENTRADAS), ("midia_entrada", ENTRADAS), ("texto_saida", SAIDAS),
+                   ("midia_saida", SAIDAS), ("posicao_texto", POSICOES_TEXTO)):
+        if k in e:
+            if e[k] not in ops:
+                raise Erro(f"alertas.estilo.{k}", "Opção inválida.")
+            est[k] = e[k]
+    for k in ("texto_x", "texto_y"):
+        if k in e:
+            est[k] = _inteiro(f"alertas.estilo.{k}", e[k], -400, 400, "Use um valor entre -400 e 400.")
+    if "texto_atraso" in e:
+        est["texto_atraso"] = _inteiro("alertas.estilo.texto_atraso", e["texto_atraso"], 0, 5000,
+                                       "Use um valor entre 0 e 5000 ms.")
+    if "mensagem_max" in e:
+        est["mensagem_max"] = _inteiro("alertas.estilo.mensagem_max", e["mensagem_max"], 20, 500,
+                                       "Use um valor entre 20 e 500.")
     cats = _secao(a, "categorias")
     for nome, c in cats.items():
         if nome not in alertas_regras.CATEGORIAS:
@@ -165,6 +178,8 @@ def _alertas(a: dict, cfg: dict):
             d["som"] = _arquivo(pre + "som", c["som"], alertas_servico.resolver_som)
         if "imagem" in c:
             d["imagem"] = _arquivo(pre + "imagem", c["imagem"], alertas_servico.resolver_imagem)
+        if "video" in c:
+            d["video"] = _arquivo(pre + "video", c["video"], alertas_servico.resolver_video)
         if "volume" in c:
             d["volume"] = _inteiro(pre + "volume", c["volume"], 0, 100, "Use um valor entre 0 e 100.")
         if "duracao" in c:
